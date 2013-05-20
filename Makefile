@@ -17,9 +17,9 @@ R_FILES 				+= $(wildcard ./inst/tests/*.r)
 R_FILES 				+= $(wildcard ./man-roxygen/*.R)
 R_FILES 				+= $(wildcard ./tests/*.R)
 
-M4_FILES				?= $(wildcard *.m4)
+M4_FILES				?= $(wildcard m4/*.m4)
 
-VERSION 				 = 0.1305
+VERSION 				 = 0.1306
 TODAY 					:= $(shell date +%Y-%m-%d)
 
 PKG_NAME 				:= SharpeR
@@ -29,8 +29,6 @@ PKG_SRC 				:= $(shell basename $(PWD))
 PKG_TGZ 				 = $(PKG_NAME)_$(PKG_VERSION).tar.gz
 
 LOCAL 					:= .local
-STAGING 				:= .staging
-STAGED_PKG 			 = $(STAGING)/$(PKG_NAME)
 RCHECK 					 = $(PKG_NAME).Rcheck
 RCHECK_SENTINEL  = $(RCHECK)/$(PKG_NAME)/DESCRIPTION
 
@@ -41,6 +39,9 @@ RCHECK_SENTINEL  = $(RCHECK)/$(PKG_NAME)/DESCRIPTION
 RBIN 						?= $(shell dirname "`which R`")
 R         			 = $(RBIN)/R
 RSCRIPT   			 = $(RBIN)/Rscript
+#R_FLAGS 				?= --vanilla --verbose -q
+#R_FLAGS 				?= --vanilla -q
+R_FLAGS 				?= -q --no-save --no-restore --no-init-file
 
 # packages I need to test this one
 TEST_DEPS  			 = testthat roxygen2 knitr TTR quantmod MASS
@@ -50,16 +51,60 @@ PKG_TESTR 			 = tests/run-all.R
 #INSTALLED_DEPS 	 = $(patsubst %,$(LOCAL)/%,$(TEST_DEPS)) 
 
 # do not distribute these!
-NODIST_FILES		 = ./Makefile $(M4_FILES) rebuildTags.sh .gitignore .gitattributes .tags .R_tags
-NODIST_DIRS			 = .git man-roxygen
+NODIST_FILES		 = ./Makefile $(M4_FILES) .gitignore .gitattributes 
+NODIST_FILES		+= rebuildTags.sh .tags .R_tags
+NODIST_DIRS			 = .git man-roxygen m4
 
 RD_DUMMY 				 = man/$(PKG_NAME).Rd
 
-SUPPORT_FILES 	 = ./DESCRIPTION ./NAMESPACE $(RD_DUMMY) ./inst/doc/$(PKG_NAME).Rnw
+VIGNETTE_D 				 = inst/doc
+VIGNETTE_SRCS  		 = $(VIGNETTE_D)/$(PKG_NAME).Rnw $(VIGNETTE_D)/$(PKG_NAME).bib
+VIGNETTE_PDF   		 = $(VIGNETTE_D)/$(PKG_NAME).pdf
+VIGNETTE_HTML  		 = $(VIGNETTE_D)/index.html
+
+SUPPORT_FILES 		 = ./DESCRIPTION ./NAMESPACE $(RD_DUMMY)
+
+# 'static' means that we will build the pdf and index.html and distribute
+# those but not the sources.
+# 'dynamic' means we distribute the sources and not the pdf and index.html
+VIGNETTE_PRAGMA ?= dynamic
 
 # for R CMD build
-#BUILD_FLAGS 		?= --no-vignettes
-BUILD_FLAGS 		?= 
+ifeq ($(VIGNETTE_PRAGMA),static)
+	BUILD_FLAGS 		?= --no-vignettes
+	NODIST_FILES 		+= $(VIGNETTE_SRCS)
+	EXTRA_PKG_DEPS 	 = $(VIGNETTE_PDF) $(VIGNETTE_HTML)
+	SUPPORT_FILES 	+= $(VIGNETTE_PDF) $(VIGNETTE_HTML)
+else ifeq ($(VIGNETTE_PRAGMA),dynamic)
+	BUILD_FLAGS 		?= 
+	NODIST_FILES 		+= $(VIGNETTE_PDF) $(VIGNETTE_HTML)
+	SUPPORT_FILES 	+= $(VIGNETTE_SRCS)
+	EXTRA_PKG_DEPS 	 = 
+else
+	$(error unknown VIGNETTE_PRAGMA $(VIGNETTE_PRAGMA))
+	#BUILD_FLAGS 		?= --no-vignettes
+endif
+
+TEST_PRAGMA     ?= release
+
+# for R CMD build
+ifeq ($(TEST_PRAGMA),thorough)
+	# noop
+else 
+	SLOW_TESTS 			 = $(wildcard inst/tests/test-slow*.r)
+	NODIST_FILES 		+= $(SLOW_TESTS)
+endif
+
+define \n
+
+
+endef
+
+fooz :
+	echo $(patsubst %,%\${\n},$(NODIST_FILES))
+
+STAGING 				?= .staging/$(VIGNETTE_PRAGMA)
+STAGED_PKG 			 = $(STAGING)/$(PKG_NAME)
 
 # latex bother. bleah.
 #TEXINPADD    = .:$(HOME)/sys/etc/tex:$(HOME)/sys/etc/tex/SEPtex:$(HOME)/work/math/TEX
@@ -68,6 +113,8 @@ PRETEX       = TEXINPUTS=$(TEXINPADD):$$TEXINPUTS
 PREBIB       = BSTINPUTS=$(TEXINPADD):$$BSTINPUTS \
                BIBINPUTS=$(TEXINPADD):$$BIBINPUTS 
 BIBTEX      := $(shell which bibtex)
+
+BASE_DEF_PACKAGES   = "utils,graphics,grDevices,methods,stats,$(PKG_NAME)"
 
 #FAST_
 
@@ -91,11 +138,12 @@ WARN_DEPS = $(warning will build $@ ; newer deps are $(?))
 
 # these are phony targets
 .PHONY: help tags all \
-	gitpull gitpush \
+	gitpull gitpush staged \
 	news docs build install testthat tests \
 	staging_d local_d \
 	clean realclean \
 	vignette \
+	static_vignette \
 	R
 
 help:
@@ -109,21 +157,24 @@ help:
 	@echo "  docs       Invoke roxygen to generate Rd files in man/"
 	@echo "  testthat   Run unit tests."
 	@echo '  tests       "   "     "   '
-	@echo "  parallel   Create a staging version of this package."
-	@echo "  build      Invoke docs and then create a package."
-	@echo "  check      Invoke build and then check the package."
-	@echo "  install    Invoke build and then install the result."
-	@echo "  R          Invoke R in a local context with the package."
+	@echo "  staged     Create a staging version of this package."
+	@echo "  build      Make docs and then R CMD build the package.tgz"
+	@echo "  install    Make build and then install the result."
+	@echo "  R          Make install, then invoke R in the local context w/ the package."
 	@echo "  vignette   Build the vignette in the local context."
 	@echo "  clean      Do some cleanup."
 	@echo "  realclean  Do lots of cleanup."
 	@echo ""
 	@echo "Packaging Tasks"
 	@echo "---------------"
+	@echo "  check      Make build, then R CMD check the package."
 	@echo "  gitpush    Yes, I am lazy"
 	@echo ""
 	@echo "Using R in: $(RBIN)"
 	@echo "Set the RBIN environment variable to change this."
+	@echo ""
+	@echo "also try:"
+	@echo "VIGNETTE_PRAGMA=static make build"
 	@echo ""
 
 # dev stuff
@@ -138,15 +189,18 @@ help:
 
 tags: .R_tags
 
+.Renviron : 
+	echo "R_LIBS=$(LOCAL)" >> $@
+
 # if you use emacs (shudder)
 TAGS: 
 	$(R) --slave CMD rtags
 
-DESCRIPTION : DESCRIPTION.m4 Makefile
-	m4 -DVERSION=$(VERSION) -DDATE=$(TODAY) -DPKG_NAME=$(PKG_NAME) $< > $@
+% : m4/%.m4 Makefile
+	m4 -I ./m4 -DVERSION=$(VERSION) -DDATE=$(TODAY) -DPKG_NAME=$(PKG_NAME) $< > $@
 
 # macro for local R
-RLOCAL = R_LIBS=$(LOCAL) $(R) --vanilla 
+RLOCAL = R_LIBS=$(LOCAL) $(R) $(R_FLAGS)
 
 # make directories
 local_d :
@@ -172,7 +226,7 @@ man/$(PKG_NAME).Rd NAMESPACE: $(R_FILES)
 	$(RLOCAL) --slave -e "require(roxygen2); roxygenize('.', '.', overwrite=TRUE, unlink.target=TRUE)"
 	touch $@
 
-docs: DESCRIPTION man/$(PKG_NAME).Rd 
+docs: README.md DESCRIPTION man/$(PKG_NAME).Rd 
 
 #RSYNC_FLAGS     = -av
 #RSYNC_FLAGS     = -vrlpgoD --delete
@@ -186,21 +240,21 @@ $(STAGED_PKG)/DESCRIPTION : $(R_FILES) $(SUPPORT_FILES)
 		--include=man/ --include=man/* \
 		--include=NAMESPACE --include=DESCRIPTION \
 		--exclude-from=.gitignore \
-		$(patsubst %,--exclude=%,$(NODIST_FILES)) \
-		$(patsubst %,--exclude=%,$(NODIST_DIRS)) \
-		--exclude=$(LOCAL) --exclude=$(STAGING) --exclude=$(RCHECK) \
+		$(patsubst %, % \${\n},$(patsubst %,--exclude=%,$(NODIST_FILES))) $(patsubst %,--exclude=%,$(NODIST_DIRS)) \
+		--exclude=$(LOCAL) --exclude=$(basename $(STAGING)) --exclude=$(RCHECK) \
 		. $(@D)
 	touch $@
 
-parallel : $(STAGED_PKG)/DESCRIPTION
+staged : $(STAGED_PKG)/DESCRIPTION
 
 # make the 'package', which is a tar.gz
-$(PKG_TGZ) : $(STAGED_PKG)/DESCRIPTION $(INSTALLED_DEPS)
+$(PKG_TGZ) : $(STAGED_PKG)/DESCRIPTION $(INSTALLED_DEPS) $(EXTRA_PKG_DEPS)
 	$(RLOCAL) CMD build $(BUILD_FLAGS) $(<D)
 
 #package : $(PKG_TGZ)
 
 build : $(PKG_TGZ)
+
 
 # an 'install'
 $(LOCAL)/$(PKG_NAME)/INDEX : $(PKG_TGZ) 
@@ -211,17 +265,32 @@ $(LOCAL)/$(PKG_NAME)/INDEX : $(PKG_TGZ)
 
 install: $(LOCAL)/$(PKG_NAME)/INDEX
 
+# fucking shit.
+# * Sat May 11 2013 09:48:00 PM Steven E. Pav <steven@cerebellumcapital.com>
+# static vignettes? CRAN having problems with quantmod.
+$(VIGNETTE_PDF) : $(LOCAL)/$(PKG_NAME)/doc/$(PKG_NAME).pdf
+	cp $< $@
+
+$(VIGNETTE_HTML) : $(LOCAL)/$(PKG_NAME)/doc/index.html
+	cp $< $@
+
+static_vignette : ./inst/doc/$(PKG_NAME).pdf ./inst/doc/index.html 
+
+# rely on the 'install' target above.
+$(LOCAL)/doc/$(PKG_NAME).pdf : $(LOCAL)/$(PKG_NAME)/INDEX
+
+
 # check and install
 $(RCHECK_SENTINEL) : $(PKG_TGZ)
 	$(call WARN_DEPS)
-	$(RLOCAL) CMD check --as-cran --outdir=$@ $^ 
+	$(RLOCAL) CMD check --as-cran --outdir=$(RCHECK) $^ 
 	
 check: $(RCHECK_SENTINEL)
 
 checksee : $(RCHECK_SENTINEL)
 	okular $(RCHECK)/$(PKG_NAME)-manual.pdf
 
-$(RCHECK)/$(PKG_NAME)/doc/$(PKG_NAME).pdf : inst/doc/$(PKG_NAME).Rnw $(RCHECK_SENTINEL)
+$(RCHECK)/$(PKG_NAME)/doc/$(PKG_NAME).pdf : $(VIGNETTE_SRCS) $(RCHECK_SENTINEL)
 
 slow_vignette : $(RCHECK)/$(PKG_NAME)/doc/$(PKG_NAME).pdf
 
@@ -235,7 +304,7 @@ slow_vignette : $(RCHECK)/$(PKG_NAME)/doc/$(PKG_NAME).pdf
 unit_test.log : $(LOCAL)/$(PKG_NAME)/INDEX $(LOCAL)/testthat/DESCRIPTION $(PKG_TESTR)
 	$(call WARN_DEPS)
 	R_LIBS=$(LOCAL) R_PROFILE=load.R \
-				 R_DEFAULT_PACKAGES="utils,graphics,grDevices,methods,stats,$(PKG_NAME)" R -q --no-save \
+				 R_DEFAULT_PACKAGES=$(BASE_DEF_PACKAGES) $(R) $(R_FLAGS) \
 				 --slave < $(PKG_TESTR) | tee $@
 
 testthat : unit_test.log
@@ -245,12 +314,16 @@ tests    : unit_test.log
 # drop into R shell in the 'local context'
 R : deps $(LOCAL)/$(PKG_NAME)/INDEX
 	R_LIBS=$(LOCAL) R_PROFILE=load.R \
-				 R_DEFAULT_PACKAGES="utils,graphics,grDevices,methods,stats,$(PKG_NAME)" R -q --no-save
+				 R_DEFAULT_PACKAGES=$(BASE_DEF_PACKAGES) $(R) -q --no-save
 
-$(PKG_NAME).pdf: inst/doc/$(PKG_NAME).Rnw deps $(LOCAL)/$(PKG_NAME)/INDEX 
+cheapR : 
+	R_LIBS=$(LOCAL) R_PROFILE=load.R \
+				 R_DEFAULT_PACKAGES=$(BASE_DEF_PACKAGES) $(R) -q --no-save
+
+$(PKG_NAME).pdf: $(VIGNETTE_SRCS) deps $(LOCAL)/$(PKG_NAME)/INDEX 
 	$(PRETEX) R_LIBS=$(LOCAL) R_PROFILE=load.R \
-				 R_DEFAULT_PACKAGES="utils,graphics,grDevices,methods,stats,knitr,TTR,$(PKG_NAME)" \
-				 R -q --no-save --slave -e "knitr::knit2pdf('$<');"
+				 R_DEFAULT_PACKAGES="$(BASE_DEF_PACKAGES),knitr,TTR" \
+				 $(R) $(R_FLAGS) --slave -e "knitr::knit2pdf('$<');"
 	if grep Citation $(PKG_NAME).log > /dev/null; then $(PREBIB) $(BIBTEX) $(PKG_NAME); \
 		$(PRETEX) "$(R)" CMD pdflatex $(PKG_NAME).tex; fi
 	if grep Rerun $(PKG_NAME).log > /dev/null; then $(PRETEX) "$(R)" CMD pdflatex $(PKG_NAME).tex; fi
@@ -275,7 +348,9 @@ clean :
 
 realclean : clean
 	-rm -rf $(LOCAL)
+	-rm -rf $(STAGING)
 	-rm -rf ./cache
+	-rm -rf convoluted_build.sh 
 
 ################################
 # git FOO 
@@ -294,6 +369,26 @@ tag :
 ################################
 # CRAN SUBMISSION
 ################################
+
+# don't ask.
+convoluted_build.sh : 
+	@-echo '#! /bin/bash' > $@
+	@-echo '#' >> $@
+	@-echo '' >> $@
+	@-echo 'make deps' >> $@
+	@-echo 'VIGNETTE_PRAGMA=dynamic make install' >> $@
+	@-echo 'make inst/doc/SharpeR.pdf inst/doc/index.html' >> $@
+	@-echo 'VIGNETTE_PRAGMA=static make build' >> $@
+	@-echo 'VIGNETTE_PRAGMA=static make check' >> $@
+
+fake2 : 
+	$(MAKE) deps
+	$(MAKE) docs
+	VIGNETTE_PRAGMA=dynamic $(MAKE) install
+	$(MAKE) inst/doc/SharpeR.pdf inst/doc/index.html
+	VIGNETTE_PRAGMA=static $(MAKE) build
+	VIGNETTE_PRAGMA=static $(MAKE) check
+
 
 # FTP junk
 ~/.netrc :
@@ -318,6 +413,14 @@ subadvice :
 #$(R) CMD Sweave $(PKG_NAME).Rnw;\
 #texi2dvi --pdf $(PKG_NAME).tex;\
 #$(R) --vanilla --slave -e "tools:::compactPDF(getwd(), gs_quality='printer')"
+
+mactex : 
+	sudo port install -v \
+		texlive texlive-basic texlive-bibtex-extra texlive-bin texlive-bin-extra \
+		texlive-common texlive-fonts-extra texlive-fonts-recommended \
+		texlive-fontutils texlive-formats-extra texlive-generic-extra \
+		texlive-generic-recommended texlive-latex texlive-latex-extra \
+		texlive-latex-recommended texlive-math-extra 
 
 #for vim modeline: (do not edit)
 # vim:ts=2:sw=2:tw=79:fdm=marker:fmr=FOLDUP,UNFOLD:cms=#%s:tags=tags;:syntax=make:filetype=make:ai:si:cin:nu:fo=croqt:cino=p0t0c5(0:
