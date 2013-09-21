@@ -36,6 +36,116 @@
 ########################################################################
 # Estimation 
 
+# variance covariance#FOLDUP
+#' @title Compute variance covariance of Sharpe Ratios.
+#'
+#' @description
+#'
+#' Computes the variance covariance matrix of sample Sharpe ratios.
+#'
+#' @details
+#'
+#' Given \eqn{n} contemporaneous observations of \eqn{p} returns
+#' streams, this function estimates the asymptotic variance
+#' covariance matrix of the vector of sample Sharpes, 
+#' \eqn{\left[\zeta_1,\zeta_2,\ldots,\zeta_p\right]}{[zeta1,zeta2,...,zetap]}
+#'
+#' One may use the default method for computing covariance,
+#' via the \code{\link{vcov}} function, or via a 'fancy' estimator,
+#' like \code{sandwich:vcovHAC}, \code{sandwich:vcovHC}, \emph{etc.}
+#'
+#' This code first estimates the covariance of the \eqn{2p} vector of 
+#' the vector \eqn{x} stacked on its Hadamard square, \eqn{x^2}. This is
+#' then translated back to a variance covariance on the vector of
+#' sample Sharpe ratios via the Delta method.
+#'
+#' @usage
+#'
+#' sr_vcov(X,vcov.func=vcov,ope=1)
+#'
+#' @param X an \eqn{n \times p}{n x p} matrix of observed returns.
+#' @param vcov.func a function which takes an object of class \code{lm},
+#' and computes a variance-covariance matrix.
+#' @template param-ope
+#' @keywords univar 
+#'
+#' @return a list containing the following components:
+#' \item{SR}{a vector of (annualized) Sharpe ratios.}
+#' \item{Ohat}{a \eqn{p \times p}{p x p} variance covariance matrix.}
+#' \item{p}{the number of assets.}
+#' @seealso sr-distribution functions, \code{\link{dsr}}
+#' @rdname sr_vcov
+#' @export 
+#' @template etc
+#' @template sr
+#' @template ref-Lo
+#'
+#' @examples 
+#' X <- matrix(rnorm(1000*3),ncol=3)
+#' colnames(X) <- c("ABC","XYZ","WORM")
+#' Sigmas <- sr_vcov(X)
+#' # make it fat tailed:
+#' X <- matrix(rt(1000*3,df=5),ncol=3)
+#' Sigmas <- sr_vcov(X)
+#' \dontrun{
+#' if (require(sandwich)) {
+#'	Sigmas <- sr_vcov(X,vcov.func=vcovHC)
+#' }
+#' }
+#' # add some autocorrelation to X
+#' Xf <- filter(X,c(0.2),"recursive")
+#' colnames(Xf) <- colnames(X)
+#' Sigmas <- sr_vcov(Xf)
+#' \dontrun{
+#' if (require(sandwich)) {
+#'	Sigmas <- sr_vcov(Xf,vcov.func=vcovHAC)
+#' }
+#' }
+#'
+sr_vcov <- function(X,vcov.func=vcov,ope=1) {
+	X <- na.omit(X)
+	p <- dim(X)[2]
+
+	# cat together X and X squared
+	XX2 <- cbind(X,X^2)
+	mod2 <- lm(XX2 ~ 1)
+
+	mm2 <- mod2$coefficients
+
+	# mean of X and X^2
+	m1 <- mm2[1:p]
+	m2 <- mm2[p + (1:p)]
+	# volatility
+	sig2 <- (m2 - m1^2)
+	# the SR:
+	SR <- m1 / sqrt(sig2)
+
+	# estimate Sigma hat
+	Shat = vcov.func(mod2)
+
+	# construct D matrix
+	deno <- (sig2)^(3/2)
+	D1 <- diag(m2 / deno)
+	D2 <- diag(-m1 / (2*deno))
+	Dt <- rbind(D1,D2)
+
+	# Omegahat
+	Ohat <- t(Dt) %*% Shat %*% Dt
+	# 2FIX: do I have to adjust for sample size or something?
+
+	# get names;
+	strnames <- if (is.null(colnames(X))) sapply(1:p,function(n) { sprintf("asset_%03d",n) }) else colnames(X)
+	
+	dim(SR) <- c(p,1)
+	rownames(SR) <- strnames
+	rownames(Ohat) <- strnames
+	colnames(Ohat) <- strnames
+	retval <- list(SR=.annualize(SR,ope),
+								 Ohat=ope * Ohat,p=p)
+	return(retval)
+}
+#UNFOLD
+
 # inference on the t-stat#FOLDUP
 
 # standard error on the non-centrality parameter of a t-stat
@@ -89,7 +199,7 @@
 }
 #UNFOLD
 
-# confidence intervals on the Sharpe ratio#FOLDUP
+# standard error computation#FOLDUP
 
 #' @rdname se
 #' @export
@@ -151,6 +261,12 @@ se.sr <- function(z, type=c("t","Lo")) {
 	retval <- .t2sr(z,retval)
 	return(retval)
 }
+#UNFOLD
+
+# confidence intervals on the Sharpe ratio#FOLDUP
+
+# do not have to include this, as confint is a generic provided
+# by R. I think.
 #  ' @usage
 #  '
 #  ' confint(object,level=0.95,level.lo=(1-level)/2,level.hi=1-level.lo,...)
@@ -158,6 +274,7 @@ se.sr <- function(z, type=c("t","Lo")) {
 							 #level.lo=(1-level)/2,level.hi=1-level.lo,...) {
 	#UseMethod("confint", object)
 #}
+
 #' @title Confidence Interval on (optimal) Signal-Noise Ratio
 #'
 #' @description 
@@ -241,6 +358,21 @@ se.sr <- function(z, type=c("t","Lo")) {
 #' roll.own <- sropt(z.s=rvs,df1,df2,drag=0,ope=ope)
 #' aci <- confint(roll.own,level=0.95)
 #' coverage <- 1 - mean((zeta.s < aci[,1]) | (aci[,2] < zeta.s))
+#' # using "del_sropt" class
+#' nfac <- 5
+#' nyr <- 10
+#' ope <- 253
+#' set.seed(as.integer(charToRaw("be determinstic")))
+#' Returns <- matrix(rnorm(ope*nyr*nfac,mean=0,sd=0.0125),ncol=nfac)
+#' # hedge out the first one:
+#' G <- matrix(diag(nfac)[1,],nrow=1)
+#' asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
+#' aci <- confint(asro,level=0.95)
+#' # under the alternative
+#' Returns <- matrix(rnorm(ope*nyr*nfac,mean=0.001,sd=0.0125),ncol=nfac)
+#' asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
+#' aci <- confint(asro,level=0.95)
+#'
 #' @method confint sr 
 #' @S3method confint sr 
 #' @export
@@ -272,7 +404,34 @@ confint.sropt <- function(object,parm,level=0.95,
 	colnames(retval) <- sapply(c(level.lo,level.hi),function(x) { sprintf("%g %%",100*x) })
 	return(retval)
 }
+#' @export
+#' @rdname confint
+#' @method confint del_sropt
+#' @S3method confint del_sropt
+confint.del_sropt <- function(object,parm,level=0.95,
+							 level.lo=(1-level)/2,level.hi=1-level.lo,...) {
+	Fandp <- .del_sropt.asF(object)
+	ncp.hi <- qco_f(level.hi,df1=Fandp$df1,df2=Fandp$df2,
+									x=Fandp$Fval,lower.tail=TRUE)
+	ncp.lo <- qco_f(level.lo,df1=Fandp$df1,df2=Fandp$df2,
+									x=Fandp$Fval,lower.tail=TRUE,
+									ub=max(ncp.hi))
+	# now convert them back.
+	scal.eff <- Fandp$N * (1 - Fandp$R1)
+	ci.lo <- ncp.lo / scal.eff
+	ci.hi <- ncp.hi / scal.eff
+	# these are now differences of squares.
+	# deal with annualization?
+	# 2FIX: drag is being ignored. harumph.
+	ci.lo <- .annualize(sqrt(ci.lo),object$ope)
+	ci.hi <- .annualize(sqrt(ci.hi),object$ope)
 
+	ci <- cbind(ci.lo,ci.hi)
+
+	retval <- matrix(ci,ncol=2)
+	colnames(retval) <- sapply(c(level.lo,level.hi),function(x) { sprintf("%g %%",100*x) })
+	return(retval)
+}
 #UNFOLD
 
 # point inference on sropt/ncp of F#FOLDUP
@@ -377,16 +536,14 @@ T2.inference <- function(T2,df1,df2,...) {
 #' units 'per square root time'. As such, the \code{'unbiased'}
 #' type can be problematic!
 #'
-#' @usage
 #'
-#' inference(z.s,type=c("KRS","MLE","unbiased"))
-#'
-#' @param z.s an object of type \code{sropt}.
+#' @param z.s an object of type \code{sropt}, or \code{del_sropt}
 #' @inheritParams dsropt
 #' @param type the estimator type. one of \code{c("KRS", "MLE", "unbiased")}
 #' @keywords htest
-#' @return an estimate of the non-centrality parameter.
-#' @seealso F-distribution functions, \code{\link{df}}
+#' @return an estimate of the non-centrality parameter, which is
+#' the maximal population Sharpe ratio.
+#' @seealso F-distribution functions, \code{\link{df}}.
 #' @export 
 #' @template etc
 #' @family sropt Hotelling
@@ -398,6 +555,9 @@ T2.inference <- function(T2,df1,df2,...) {
 #' Spruill, M. C. "Computation of the maximum likelihood estimate of a noncentrality parameter." 
 #' Journal of multivariate analysis 18, no. 2 (1986): 216-224.
 #' \url{http://www.sciencedirect.com/science/article/pii/0047259X86900709}
+#'
+#' @rdname inference
+#' @export inference
 #'
 #' @examples 
 #' # generate some sropts
@@ -431,13 +591,51 @@ T2.inference <- function(T2,df1,df2,...) {
 #' est2 <- inference(roll.own,type='KRS')  
 #' est3 <- inference(roll.own,type='MLE')
 #'
+#' # for del_sropt:
+#' nfac <- 5
+#' nyr <- 10
+#' ope <- 253
+#' set.seed(as.integer(charToRaw("fix seed")))
+#' Returns <- matrix(rnorm(ope*nyr*nfac,mean=0.0005,sd=0.0125),ncol=nfac)
+#' # hedge out the first one:
+#' G <- matrix(diag(nfac)[1,],nrow=1)
+#' asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
+#' est1 <- inference(asro,type='unbiased')  
+#' est2 <- inference(asro,type='KRS')  
+#' est3 <- inference(asro,type='MLE')
+#'
 inference <- function(z.s,type=c("KRS","MLE","unbiased")) {
+	UseMethod("inference", z.s)
+}
+#' @rdname inference
+#' @method inference sropt
+#' @S3method inference sropt
+inference.sropt <- function(z.s,type=c("KRS","MLE","unbiased")) {
 	# type defaults to "KRS":
 	type <- match.arg(type)
 	T2 <- .sropt2T(z.s)
 	retval <- T2.inference(T2,z.s$df1,z.s$df2,type)
 	# convert back
 	retval <- .T2sropt(z.s,retval)
+	return(retval)
+}
+#' @rdname inference
+#' @method inference del_sropt
+#' @S3method inference del_sropt
+inference.del_sropt <- function(z.s,type=c("KRS","MLE","unbiased")) {
+	# type defaults to "KRS":
+	type <- match.arg(type)
+	# convert to F
+	Fandp <- .del_sropt.asF(z.s)
+	retval <- F.inference(Fandp$Fval,
+												df1=Fandp$df1,df2=Fandp$df2,
+												type=type)
+	# convert back
+	scal.eff <- Fandp$N * (1 - Fandp$R1)
+	retval <- retval / scal.eff
+	# and back to SR
+	# 2FIX: drag is being ignored. harumph.
+	retval <- .annualize(sqrt(retval),z.s$ope)
 	return(retval)
 }
 #UNFOLD

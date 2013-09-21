@@ -33,7 +33,13 @@
   \item{df2}{the number of observations.}
 }
 \value{
-  a list cast to class \code{sropt}.
+  a list cast to class \code{sropt}, with the following
+  attributes: \item{sropt}{the optimal Sharpe statistic.}
+  \item{df1}{the number of assets.} \item{df2}{the number
+  of observed vectors.} \item{drag}{the input \code{drag}
+  term.} \item{ope}{the input \code{ope} term.}
+  \item{epoch}{the input \code{epoch} term.} \item{T2}{the
+  Hotelling \eqn{T^2} statistic.}
 }
 \description{
   Spawns an object of class \code{sropt}.
@@ -62,6 +68,7 @@ ope <- 253
 zeta.s <- 1.0
 df1 <- 10
 df2 <- 6 * ope
+set.seed(as.integer(charToRaw("fix seed")))
 rvs <- rsropt(1,df1,df2,zeta.s,ope,drag=0)
 roll.own <- sropt(z.s=rvs,df1,df2,drag=0,ope=ope)
 print(roll.own)
@@ -80,9 +87,11 @@ print(roll.own)
 
   Other sropt: \code{\link{as.sropt}},
   \code{\link{as.sropt.default}},
-  \code{\link{as.sropt.xts}}, \code{\link{confint.sr}},
-  \code{\link{confint.sropt}}, \code{\link{dsropt}},
-  \code{\link{is.sropt}}, \code{\link{power.sropt_test}},
+  \code{\link{as.sropt.xts}},
+  \code{\link{confint.del_sropt}},
+  \code{\link{confint.sr}}, \code{\link{confint.sropt}},
+  \code{\link{dsropt}}, \code{\link{is.sropt}},
+  \code{\link{power.sropt_test}},
   \code{\link{reannualize}}, \code{\link{reannualize.sr}},
   \code{\link{reannualize.sropt}}, \code{\link{sropt_test}}
 }

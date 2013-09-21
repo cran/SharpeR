@@ -1,4 +1,5 @@
 \name{print.sr}
+\alias{print.del_sropt}
 \alias{print.sr}
 \alias{print.sropt}
 \title{Print values.}
@@ -6,6 +7,8 @@
   \method{print}{sr} (x, ...)
 
   \method{print}{sropt} (x, ...)
+
+  \method{print}{del_sropt} (x, ...)
 }
 \arguments{
   \item{x}{an object of class \code{sr} or \code{sropt}.}
@@ -60,12 +63,14 @@ print(asro)
   \code{\link{as.sr.default}}, \code{\link{as.sr.lm}},
   \code{\link{as.sr.matrix}},
   \code{\link{as.sr.timeSeries}}, \code{\link{as.sr.xts}},
+  \code{\link{confint.del_sropt}},
   \code{\link{confint.sr}}, \code{\link{confint.sropt}},
   \code{\link{dsr}}, \code{\link{is.sr}},
   \code{\link{power.sr_test}}, \code{\link{reannualize}},
   \code{\link{reannualize.sr}},
   \code{\link{reannualize.sropt}}, \code{\link{se}},
   \code{\link{se.sr}}, \code{\link{sr}},
-  \code{\link{sr_equality_test}}, \code{\link{sr_test}}
+  \code{\link{sr_equality_test}}, \code{\link{sr_test}},
+  \code{\link{sr_vcov}}
 }
 

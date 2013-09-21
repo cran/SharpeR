@@ -7,7 +7,8 @@
 }
 \arguments{
   \item{X}{a (non-empty) numeric matrix of data values,
-  each row independent,}
+  each row independent, each column representing an asset,
+  or an object of class \code{sropt}.}
 
   \item{alternative}{a character string specifying the
   alternative hypothesis, must be one of
@@ -58,7 +59,7 @@
   mu = delta_0^2}
 
   The default alternative hypothesis is the one-sided
-  \deqn{H_0: \mu^{\top}\Sigma^{-1}\mu > \delta_0^2}{H0: mu'
+  \deqn{H_1: \mu^{\top}\Sigma^{-1}\mu > \delta_0^2}{H1: mu'
   Sigma^-1 mu > delta_0^2} but this can be set otherwise.
 
   Note there is no 'drag' term here since this represents a
@@ -70,6 +71,17 @@ pvs <- replicate(128,{ x <- sropt_test(matrix(rnorm(1000*4),ncol=4),alternative=
                         x$p.value })
 plot(ecdf(pvs))
 abline(0,1,col='red')
+
+# input a sropt objects:
+nfac <- 5
+nyr <- 10
+ope <- 253
+# simulations with no covariance structure.
+# under the null:
+set.seed(as.integer(charToRaw("be determinstic")))
+Returns <- matrix(rnorm(ope*nyr*nfac,mean=0,sd=0.0125),ncol=nfac)
+asro <- as.sropt(Returns,drag=0,ope=ope)
+stest <- sropt_test(asro,alternative="two.sided")
 }
 \author{
   Steven E. Pav \email{shabbychef@gmail.com}
@@ -81,9 +93,11 @@ abline(0,1,col='red')
 
   Other sropt: \code{\link{as.sropt}},
   \code{\link{as.sropt.default}},
-  \code{\link{as.sropt.xts}}, \code{\link{confint.sr}},
-  \code{\link{confint.sropt}}, \code{\link{dsropt}},
-  \code{\link{is.sropt}}, \code{\link{power.sropt_test}},
+  \code{\link{as.sropt.xts}},
+  \code{\link{confint.del_sropt}},
+  \code{\link{confint.sr}}, \code{\link{confint.sropt}},
+  \code{\link{dsropt}}, \code{\link{is.sropt}},
+  \code{\link{power.sropt_test}},
   \code{\link{reannualize}}, \code{\link{reannualize.sr}},
   \code{\link{reannualize.sropt}}, \code{\link{sropt}}
 }

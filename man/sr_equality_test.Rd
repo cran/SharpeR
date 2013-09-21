@@ -4,7 +4,7 @@
 \usage{
   sr_equality_test(X,type=c("chisq","F","t"),
     alternative=c("two.sided","less","greater"),
-    contrasts=NULL)
+    contrasts=NULL, vcov.func=vcov)
 }
 \arguments{
   \item{X}{an \eqn{n \times p}{n x p} matrix of paired
@@ -24,6 +24,13 @@
   specify just the initial letter.  This is only relevant
   for the \code{"t"} test.  \code{"greater"} corresponds to
   \eqn{H_a: E s > 0}{Ha: E s > 0}.}
+
+  \item{vcov.func}{a function which takes a model of class
+  lm (one of the form x ~ 1), and produces a
+  variance-covariance matrix.  The default is
+  \code{\link{vcov}}, which produces a 'vanilla' estimate
+  of covariance. Other sensible options are \code{vcovHAC}
+  from the \code{sandwich} package.}
 }
 \value{
   Object of class \code{htest}, a list of the test
@@ -85,6 +92,26 @@ pvs <- replicate(1024,{ x <- sr_equality_test(matrix(rnorm(400*5),400,5),type="c
 plot(ecdf(pvs))
 abline(0,1,col='red')
 }
+\dontrun{
+if (require(sandwich)) {
+  set.seed(as.integer(charToRaw("0b2fd4e9-3bdf-4e3e-9c75-25c6d18c331f")))
+  n.manifest <- 10
+  n.latent <- 4
+  n.day <- 1024
+  snr <- 0.95
+  latent.rets <- matrix(rnorm(n.day*n.latent),ncol=n.latent) \%*\%
+		matrix(runif(n.latent*n.manifest),ncol=n.manifest)
+  noise.rets <- matrix(rnorm(n.day*n.manifest),ncol=n.manifest)
+  some.rets <- snr * latent.rets + sqrt(1-snr^2) * noise.rets
+  # naive vcov
+  pvs0 <- sr_equality_test(some.rets)
+  # HAC vcov
+  pvs1 <- sr_equality_test(some.rets,vcov.func=vcovHAC)
+  # more elaborately:
+  pvs <- sr_equality_test(some.rets,vcov.func=function(amod) {
+		vcovHAC(amod,prewhite=TRUE) })
+}
+}
 }
 \author{
   Steven E. Pav \email{shabbychef@gmail.com}
@@ -107,6 +134,15 @@ abline(0,1,col='red')
 
   Memmel, C. "Performance hypothesis testing with the
   Sharpe ratio." Finance Letters 1 (2003): 21--23.
+
+  Ledoit, O., and Wolf, M. "Robust performance hypothesis
+  testing with the Sharpe ratio." Journal of Empirical
+  Finance 15, no. 5 (2008): 850-859.
+  \url{http://www.ledoit.net/jef2008_abstract.htm}
+
+  Lo, Andrew W. "The statistics of Sharpe ratios."
+  Financial Analysts Journal 58, no. 4 (2002): 36-52.
+  \url{http://ssrn.com/paper=377260}
 }
 \seealso{
   \code{\link{sr_test}}
@@ -116,14 +152,16 @@ abline(0,1,col='red')
   \code{\link{as.sr.default}}, \code{\link{as.sr.lm}},
   \code{\link{as.sr.matrix}},
   \code{\link{as.sr.timeSeries}}, \code{\link{as.sr.xts}},
+  \code{\link{confint.del_sropt}},
   \code{\link{confint.sr}}, \code{\link{confint.sropt}},
   \code{\link{dsr}}, \code{\link{is.sr}},
-  \code{\link{power.sr_test}}, \code{\link{print.sr}},
+  \code{\link{power.sr_test}},
+  \code{\link{print.del_sropt}}, \code{\link{print.sr}},
   \code{\link{print.sropt}}, \code{\link{reannualize}},
   \code{\link{reannualize.sr}},
   \code{\link{reannualize.sropt}}, \code{\link{se}},
   \code{\link{se.sr}}, \code{\link{sr}},
-  \code{\link{sr_test}}
+  \code{\link{sr_test}}, \code{\link{sr_vcov}}
 }
 \keyword{htest}
 

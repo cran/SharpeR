@@ -1,5 +1,5 @@
 
-## @knitr 'preamble', include=FALSE, warning=FALSE, message=FALSE
+## ----'preamble', include=FALSE, warning=FALSE, message=FALSE-------------
 library(knitr)
 
 # set the knitr options ... for everyone!
@@ -10,10 +10,10 @@ opts_knit$set(eval.after='fig.cap')
 # opts_chunk$set(echo=FALSE,warning=FALSE,message=FALSE)
 opts_chunk$set(warning=FALSE,message=FALSE)
 #opts_chunk$set(results="asis")
-opts_chunk$set(cache=TRUE,cache.path="cache/")
+opts_chunk$set(cache=TRUE,cache.path="cache/SharpeR")
 
 #opts_chunk$set(fig.path="figure/",dev=c("pdf","cairo_ps"))
-opts_chunk$set(fig.path="figure/",dev=c("pdf"))
+opts_chunk$set(fig.path="figure/SharpeR",dev=c("pdf"))
 opts_chunk$set(fig.width=5,fig.height=4,dpi=64)
 
 # doing this means that png files are made of figures;
@@ -41,13 +41,13 @@ FORCE_RECOMPUTE <-
 # compiler flags!
 
 # not used yet
-LONG.FORM <- TRUE
+LONG.FORM <- FALSE
 
 library(quantmod)
 options("getSymbols.warning4.0"=FALSE)
 
 
-## @knitr 'babysteps'
+## ----'babysteps'---------------------------------------------------------
 library(SharpeR)
 # suppose you computed the Sharpe of your strategy to
 # be 1.3 / sqrt(yr), based on 1200 daily observations.
@@ -63,7 +63,7 @@ my.sr <- sr(srstats,df=1200-1,ope=252,epoch="yr")
 print(my.sr)
 
 
-## @knitr 'showoff'
+## ----'showoff'-----------------------------------------------------------
 set.seed(as.integer(charToRaw("set the seed")))
 # Sharpe's 'model': just given a bunch of returns.
 returns <- rnorm(253*8,mean=3e-4,sd=1e-2)
@@ -74,14 +74,14 @@ asr <- as.sr(data.frame(my.strategy=returns),ope=253,epoch="yr")
 print(asr)
 
 
-## @knitr 'more_data_frame'
+## ----'more_data_frame'---------------------------------------------------
 # a data.frame with multiple strategies
 asr <- as.sr(data.frame(strat1=rnorm(253*8),strat2=rnorm(253*8,mean=4e-4,sd=1e-2)),
 	ope=253,epoch="yr")
 print(asr)
 
 
-## @knitr 'stock_loading',eval=FALSE,echo=TRUE
+## ----'stock_loading',eval=FALSE,echo=TRUE--------------------------------
 ## require(quantmod)
 ## # get price data, compute log returns on adjusted closes
 ## get.ret <- function(sym,warnings=FALSE,...) {
@@ -109,7 +109,7 @@ print(asr)
 ## get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
 
 
-## @knitr 'stock_loading_sneaky',eval=TRUE,echo=FALSE
+## ----'stock_loading_sneaky',eval=TRUE,echo=FALSE-------------------------
 # sleight of hand to load precomputed data instead.
 get.rets <- function(syms,from='2003-01-01',to='2013-01-01',...) {
 	fname <- system.file('extdata','ret_data.rda',package='SharpeR')
@@ -123,7 +123,7 @@ get.rets <- function(syms,from='2003-01-01',to='2013-01-01',...) {
 }
 
 
-## @knitr 'helper_function'
+## ----'helper_function'---------------------------------------------------
 require(quantmod)
 # quantmod::periodReturn does not deal properly with multiple
 # columns, and the straightforward apply(mtms,2,periodReturn) barfs
@@ -142,13 +142,13 @@ lr2mtm <- function(x,...) {
 }
 
 
-## @knitr 'some_stocks'
+## ----'some_stocks'-------------------------------------------------------
 some.rets <- get.rets(c("IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
 print(as.sr(some.rets))
 
 
-## @knitr 'reannualize'
+## ----'reannualize'-------------------------------------------------------
 yearly <- as.sr(some.rets[,"XOM"])
 monthly <- reannualize(yearly,new.ope=21,new.epoch="mo.")
 print(yearly)
@@ -156,7 +156,7 @@ print(yearly)
 print(monthly)
 
 
-## @knitr 'AAPL'
+## ----'AAPL'--------------------------------------------------------------
 # get the returns (see above for the function)
 aapl.rets <- get.rets(c("AAPL","SPY"),from="2003-01-01",to="2013-01-01")
 # make them monthly:
@@ -180,7 +180,7 @@ print(confint(linmod,'(Intercept)'))
 print(confint(CAPM.sr))
 
 
-## @knitr 'SPDRcheck'
+## ----'SPDRcheck'---------------------------------------------------------
 # get the sector 'spiders'
 secto.rets <- get.rets(c("XLY","XLE","XLP","XLF","XLV","XLI","XLB","XLK","XLU"),
 	from="2003-01-01",to="2013-01-01")
@@ -197,7 +197,7 @@ XLF.monthly <- mo.rets[,"XLF"]
 print(sr_test(x=XLU.monthly,y=XLF.monthly,ope=12,paired=TRUE))
 
 
-## @knitr 'power_thing',fig.cap="The percent error of the power mnemonic $e\\approx\\ssiz \\psnrsq$ is plotted versus \\psnr.",fig.height=4,fig.width=5
+## ----'power_thing',fig.cap="The percent error of the power mnemonic $e\\approx\\ssiz \\psnrsq$ is plotted versus \\psnr.",fig.height=4,fig.width=5----
 ope <- 253
  zetas <- seq(0.1,2.5,length.out=51)
 ssizes <- sapply(zetas,function(zed) { 
@@ -207,11 +207,12 @@ ssizes <- sapply(zetas,function(zed) {
 plot(zetas,100 * ((exp(1) / zetas^2) - ssizes)/ssizes, ylab="error in mnemonic rule (as %)")
 
 
-## @knitr 'sobering',include=FALSE
+## ----'sobering',include=FALSE--------------------------------------------
 foo.power <- power.sr_test(n=253,zeta=NULL,sig.level=0.05,power=0.5,ope=253)
 
 
-## @knitr 'sropt_basics'
+## ----'sropt_basics'------------------------------------------------------
+set.seed(as.integer(charToRaw("7bf4b86a-1834-4b58-9eff-6c7dec724fec")))
 # from a matrix object:
 ope <- 253
 n.stok <- 7
@@ -221,12 +222,19 @@ rand.rets <- matrix(rnorm(n.yr * ope * n.stok),ncol=n.stok)
 asro <- as.sropt(rand.rets,ope=ope)
 rm(rand.rets)
 print(asro)
+# under the alternative, when the mean is nonzero
+rand.rets <- matrix(rnorm(n.yr * ope * n.stok,mean=6e-4,sd=1e-2),ncol=n.stok)
+asro <- as.sropt(rand.rets,ope=ope)
+rm(rand.rets)
+print(asro)
 # from an xts object
+some.rets <- get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01")
 asro <- as.sropt(some.rets)
 print(asro)
 
 
-## @knitr 'sropt_estim'
+## ----'sropt_estim'-------------------------------------------------------
 # confidence intervals:
 print(confint(asro,level.lo=0.05,level.hi=1))
 # estimation
@@ -234,7 +242,7 @@ print(inference(asro,type="KRS"))
 print(inference(asro,type="MLE"))
 
 
-## @knitr 'MLE_rule'
+## ----'MLE_rule'----------------------------------------------------------
 ope <- 253
 zeta.s <- 0.8
 n.check <- 1000
@@ -250,82 +258,7 @@ cat(sprintf("empirical cutoff for zero MLE is %2.2f yr^{-1}\n", crit.value))
 cat(sprintf("the aspect ratio is %2.2f yr^{-1}\n",aspect.ratio))
 
 
-## @knitr 'haircutting',fig.cap=paste("Q-Q plot of",n.sim,"simulated haircut values versus the approximation given by \\eqnref{hcut_apx} is shown.")
-require(MASS)
-
-# simple markowitz.
-simple.marko <- function(rets) {
-	mu.hat <- as.vector(apply(rets,MARGIN=2,mean,na.rm=TRUE))
-	Sig.hat <- cov(rets)
-	w.opt <- solve(Sig.hat,mu.hat)
-	retval <- list('mu'=mu.hat,'sig'=Sig.hat,'w'=w.opt)
-	return(retval)
-}
-# make multivariate pop. & sample w/ given zeta.star
-gen.pop <- function(n,p,zeta.s=0) {
-	true.mu <- matrix(rnorm(p),ncol=p)
-	#generate an SPD population covariance. a hack.
-	xser <- matrix(rnorm(p*(p + 100)),ncol=p)
-	true.Sig <- t(xser) %*% xser
-	pre.sr <- sqrt(true.mu %*% solve(true.Sig,t(true.mu)))
-	#scale down the sample mean to match the zeta.s
-	true.mu <- (zeta.s/pre.sr[1]) * true.mu 
-  X <- mvrnorm(n=n,mu=true.mu,Sigma=true.Sig)
-	retval = list('X'=X,'mu'=true.mu,'sig'=true.Sig,'SNR'=zeta.s)
-	return(retval)
-}
-# a single simulation
-sample.haircut <- function(n,p,...) {
-	popX <- gen.pop(n,p,...)
-	smeas <- simple.marko(popX$X)
-	# I have got to figure out how to deal with vectors...
-	ssnr <- (t(smeas$w) %*% t(popX$mu)) / sqrt(t(smeas$w) %*% popX$sig %*% smeas$w)
-	hcut <- 1 - (ssnr / popX$SNR)
-	# for plugin estimator, estimate zeta.star
-	asro <- sropt(z.s=sqrt(t(smeas$w) %*% smeas$mu),df1=p,df2=n)
-	zeta.hat.s <- inference(asro,type="KRS")  # or 'MLE', 'unbiased'
-	return(c(hcut,zeta.hat.s))
-}
-
-# set everything up
-set.seed(as.integer(charToRaw("496509a9-dd90-4347-aee2-1de6d3635724")))
-ope <- 253
-LONG.FORM <- FALSE
-n.sim <- if (LONG.FORM) 2048 else 512
-n.stok <- if (LONG.FORM) 8 else 6
-n.yr <- 4
-n.obs <- ceiling(ope * n.yr)
-zeta.s <- 1.20 / sqrt(ope)   # optimal SNR, in daily units
-
-# run some experiments
-system.time(experiments <- replicate(n.sim,sample.haircut(n.obs,n.stok,zeta.s)))
-hcuts <- experiments[1,]
-print(summary(hcuts))
-# haircut approximation in the equation above
-qhcut <- function(p, df1, df2, zeta.s, lower.tail=TRUE) {
-	1 - sin(atan((1/sqrt(df1-1)) * qt(p,df=df1-1,ncp=sqrt(df2)*zeta.s,lower.tail=!lower.tail)))
-}
-# if you wanted to look at how bad the plug-in estimator is, then
-# uncomment the following (you are warned):
-# zeta.hat.s <- experiments[2,];                                   
-# qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.hat.s),hcuts,
-# 			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles");
-# qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.hat.s) },
-# 			 col=2)
-
-# qqplot;
-qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.s),hcuts,
-			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles")
-qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.s) },
-			 col=2)
-
-
-## @knitr 'hcut_med',include=FALSE
-medv.true <- median(hcuts)
-med.snr.true <- zeta.s * (1 - medv.true)
-
-
-## @knitr 'estimate_overfit',fig.cap=paste("Q-Q plot of",n.sim,"achieved optimal \\txtSR values from brute force search over both windows of a Moving Average Crossover under the null of driftless log returns with zero autocorrelation versus the approximation by a 2-parameter optimal \\txtSR distribution is shown.")
+## ----'estimate_overfit',fig.cap=paste("Q-Q plot of",n.sim,"achieved optimal \\txtSR values from brute force search over both windows of a Moving Average Crossover under the null of driftless log returns with zero autocorrelation versus the approximation by a 2-parameter optimal \\txtSR distribution is shown.")----
 require(TTR)
 # brute force search two window MAC
 brute.force <- function(lrets,rrets=exp(lrets)-1,win1,win2=win1) {
@@ -367,6 +300,7 @@ set.seed(as.integer(charToRaw("e23769f4-94f8-4c36-bca1-28c48c49b4fb")))
 ope <- 253
 n.yr <- 4
 n.obs <- ceiling(ope * n.yr)
+LONG.FORM <- FALSE
 n.sim <- if (LONG.FORM) 2048 else 1024
 win1 <- if (LONG.FORM) c(2,4,8,16,32,64,128,256) else c(4,16,64,256)
 
@@ -379,7 +313,7 @@ qqline(max.zeds,datax=FALSE,distribution = function(p) { qsropt(p,df1=2,df2=n.ob
 			 col=2)
 
 
-## @knitr 'now_on_spy'
+## ----'now_on_spy'--------------------------------------------------------
 # is MAC on SPY significant?
 SPY.lret <- get.rets(c('SPY'),from="2003-01-01",to="2013-01-01")
 # oops! there might be NAs in there!
@@ -395,7 +329,51 @@ print(SPY.MAC.asro)
 print(inference(SPY.MAC.asro,type="KRS"))
 
 
-## @knitr 'sr_eq_test_normal',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, normally distributed returns series are Q-Q plotted against uniformity.")
+## ----'del_sropt_basics'--------------------------------------------------
+set.seed(as.integer(charToRaw("364e72ab-1570-43bf-a1c6-ee7481e1c631")))
+# from a matrix object:
+ope <- 253
+n.stok <- 7
+n.yr <- 8
+# somewhat unrealistic: independent returns, under the null
+rand.rets <- matrix(rnorm(n.yr * ope * n.stok),ncol=n.stok)
+# the hedge constraint: hedge out the first stock.
+G <- diag(n.stok)[1,]
+asro <- as.del_sropt(rand.rets,G,ope=ope)
+print(asro)
+# hedge out the first two 
+G <- diag(n.stok)[1:2,]
+asro <- as.del_sropt(rand.rets,G,ope=ope)
+print(asro)
+# under the alternative, when the mean is nonzero
+rand.rets <- matrix(rnorm(n.yr * ope * n.stok,mean=6e-4,sd=1e-2),ncol=n.stok)
+G <- diag(n.stok)[1,]
+asro <- as.del_sropt(rand.rets,G,ope=ope)
+print(asro)
+
+
+## ----'del_sropt_hedging'-------------------------------------------------
+# from an xts object
+some.rets <- get.rets(c("SPY","IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01")
+# without the hedge, allowing SPY position
+asro <- as.sropt(some.rets)
+print(asro)
+# hedge out SPY!
+G <- diag(dim(some.rets)[2])[1,]
+asro.hej <- as.del_sropt(some.rets,G)
+print(asro.hej)
+
+
+## ----'del_sropt_estim'---------------------------------------------------
+# confidence intervals:
+print(confint(asro,level.lo=0.05,level.hi=1))
+# estimation
+print(inference(asro,type="KRS"))
+print(inference(asro,type="MLE"))
+
+
+## ----'sr_eq_test_normal',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, normally distributed returns series are Q-Q plotted against uniformity.")----
 # function for Q-Q plot against uniformity
 qqunif <- function(x,xlab="Theoretical Quantiles under Uniformity",
 									 ylab=NULL,...) {
@@ -406,6 +384,7 @@ qqunif <- function(x,xlab="Theoretical Quantiles under Uniformity",
 }
 
 # under normality.
+LONG.FORM <- FALSE
 n.ro <- if (LONG.FORM) 253*4 else 253*2
 n.co <- if (LONG.FORM) 20 else 4
 n.sim <- if (LONG.FORM) 1024 else 512
@@ -415,7 +394,7 @@ sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
 
-## @knitr 'sr_eq_test_hetero',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, \\tlaw{}-distributed returns series are Q-Q plotted against uniformity.")
+## ----'sr_eq_test_hetero',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, \\tlaw{}-distributed returns series are Q-Q plotted against uniformity.")----
 # try heteroskedasticity?
 set.seed(as.integer(charToRaw("81c97c5e-7b21-4672-8140-bd01d98d1d2e")))
 afoo <- replicate(n.sim,sr_equality_test(matrix(rt(n.ro*n.co,df=4),ncol=n.co),type="F"))
@@ -423,7 +402,7 @@ sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
 
-## @knitr 'sr_eq_test_correlated',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of correlated, normally-distributed returns series are Q-Q plotted against uniformity.")
+## ----'sr_eq_test_correlated',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of correlated, normally-distributed returns series are Q-Q plotted against uniformity.")----
 # try correlated returns
 n.fact <- max(2,n.co - 5)
 gen.ret <- function(n1,n2,f=max(2,n2-2),fuzz=0.1) {
@@ -437,12 +416,12 @@ sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
 
-## @knitr 'sr_eq_test_mtime_pre',echo=FALSE
+## ----'sr_eq_test_mtime_pre',echo=FALSE-----------------------------------
 n.co <- if (LONG.FORM) 100 else 50 
 n.sim <- if (LONG.FORM) 1024 else 128
 
 
-## @knitr 'sr_eq_test_mtime',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of",n.co,"market timing strategies' returns series are Q-Q plotted against uniformity. Nominal coverage is not maintained: the test is far too liberal in this case.")
+## ----'sr_eq_test_mtime',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of",n.co,"market timing strategies' returns series are Q-Q plotted against uniformity. Nominal coverage is not maintained: the test is far too liberal in this case.")----
 n.co <- if (LONG.FORM) 100 else 50 
 n.sim <- if (LONG.FORM) 1024 else 128
 SPY.lret <- get.rets(c('SPY'),from="2003-01-01",to="2013-01-01")
@@ -456,5 +435,36 @@ set.seed(as.integer(charToRaw("447cfe85-b612-4b14-bd01-404e6e99aca4")))
 system.time(afoo <- replicate(n.sim,sr_equality_test(gen.tim(n.co),type="F")))
 sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
+
+
+## ----'sr_fancy_eq'-------------------------------------------------------
+# get returns
+some.rets <- get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01")
+# using the default vcov
+test.vanilla <- sr_equality_test(some.rets,type="F")
+print(test.vanilla)
+if (require(sandwich)) {
+	# and a fancy one:
+	test.HAC <- sr_equality_test(some.rets,type="F",vcov.func=vcovHAC)
+	print(test.HAC)
+}
+
+
+## ----'sr_vcov'-----------------------------------------------------------
+# get returns
+some.rets <- get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01")
+ope <- 252
+vanilla.Sig <- sr_vcov(some.rets,ope=ope)
+print(vanilla.Sig)
+if (require(sandwich)) {
+	HC.Sig <- sr_vcov(some.rets,vcov=vcovHC,ope=ope)
+	print(HC.Sig$Ohat)
+}
+if (require(sandwich)) {
+	HAC.Sig <- sr_vcov(some.rets,vcov=vcovHAC,ope=ope)
+	print(HAC.Sig$Ohat)
+}
 
 
