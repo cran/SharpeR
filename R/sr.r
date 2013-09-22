@@ -386,6 +386,7 @@ print.sr <- function(x,...) {
 	printCoefmat(coefs,P.values=TRUE,has.Pvalue=TRUE,
 							 digits=max(2, getOption("digits") - 3),
 							 cs.ind=c(1,2),tst.ind=c(3),dig.tst=2)
+	# invisible return
 	invisible(x)
 }
 # @hadley's suggested form
@@ -483,41 +484,56 @@ reannualize.sropt <- function(object,new.ope=NULL,new.epoch=NULL) {
 #UNFOLD
 
 ########################################################################
-# Optimal Sharpe ratio#FOLDUP
+# Markowitz #FOLDUP
 
-
-
-
-
-
-markowitz <- function(mu,Sigma,df2,w=NULL) {
-	if (is.null(w))
+# markowitz, possibly on a subset, or basket, of the
+# assets.
+.sub.markowitz <- function(mu,Sigma,w=NULL,H=NULL) {
+	if (!is.null(H)) {
+		mu <- H %*% mu
+		Sigma <- .qoform(H,Sigma)
+	}
+	if (is.null(w)) 
 		w <- solve(Sigma,mu)
-	retv <- list(w=w,mu=mu,Sigma=Sigma,df1=length(w),df2=df2)
-	class(retv) <- "markowitz"
-	return(retv)
+	zeta.sq <- t(mu) %*% w
+
+	if (!is.null(H)) 
+		w <- t(H) %*% mu
+	retval <- list(w=w,zeta.sq=zeta.sq)
+	return(retval)
 }
+
+markowitz <- function(mu,Sigma,df2,w=NULL,H=NULL) {
+	# also computes Hotelling's T2
+	retval <- .sub.markowitz(mu,Sigma,w,H)
+	df1 <- ifelse(is.null(H),length(mu),dim(H)[1])
+	retval <- c(retval,list(mu=mu,Sigma=Sigma,
+						 df1=df1,df2=df2,
+						 T2=df2*retval$zeta.sq))
+	class(retval) <- c("markowitz")
+	return(retval)
+}
+
 as.markowitz <- function(X,...) {
 	UseMethod("as.markowitz", X)
 }
-# compute the markowitz portfolio
-as.markowitz.default <- function(X,mu=NULL,Sigma=NULL) {
+
+# compute the (constrained) markowitz portfolio
+as.markowitz.default <- function(X,mu=NULL,Sigma=NULL,...) {
 	X <- na.omit(X)
 	if (is.null(mu)) 
 		mu <- colMeans(X)
 	if (is.null(Sigma)) 
 		Sigma <- cov(X)
 	df2 <- dim(X)[1]
-	retv <- markowitz(mu,Sigma,df2)
-	return(retv)
-}
-
-# compute Hotelling's statistic.
-.hotelling <- function(X) {
-	retval <- as.markowitz(X)
-	retval$T2 <- retval$df2 * (retval$mu %*% retval$w)
+	retval <- markowitz(mu,Sigma,df2,...)
 	return(retval)
 }
+
+#UNFOLD
+
+########################################################################
+# Optimal Sharpe ratio#FOLDUP
 
 # spawn a "SROPT" object.
 #' @title Create an 'sropt' object.
@@ -560,7 +576,14 @@ as.markowitz.default <- function(X,mu=NULL,Sigma=NULL) {
 #' @param epoch the string representation of the 'epoch', defaulting
 #'        to 'yr'.
 #' @keywords univar 
-#' @return a list cast to class \code{sropt}.
+#' @return a list cast to class \code{sropt}, with the following attributes:
+#' \item{sropt}{the optimal Sharpe statistic.}
+#' \item{df1}{the number of assets.}
+#' \item{df2}{the number of observed vectors.}
+#' \item{drag}{the input \code{drag} term.}
+#' \item{ope}{the input \code{ope} term.}
+#' \item{epoch}{the input \code{epoch} term.}
+#' \item{T2}{the Hotelling \eqn{T^2} statistic.}
 #' @seealso \code{\link{as.sropt}}
 #' @rdname sropt
 #' @export 
@@ -576,6 +599,7 @@ as.markowitz.default <- function(X,mu=NULL,Sigma=NULL) {
 #' zeta.s <- 1.0
 #' df1 <- 10
 #' df2 <- 6 * ope
+#' set.seed(as.integer(charToRaw("fix seed")))
 #' rvs <- rsropt(1,df1,df2,zeta.s,ope,drag=0)
 #' roll.own <- sropt(z.s=rvs,df1,df2,drag=0,ope=ope)
 #' print(roll.own)
@@ -583,13 +607,14 @@ as.markowitz.default <- function(X,mu=NULL,Sigma=NULL) {
 #' rvs <- rsropt(5,df1,df2,zeta.s,ope,drag=0)
 #' roll.own <- sropt(z.s=rvs,df1,df2,drag=0,ope=ope)
 #' print(roll.own)
-#'
 sropt <- function(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL) {
 	retval <- list(sropt = z.s,df1 = df1,df2 = df2,
 								 drag = drag,ope = ope,epoch = epoch)
 	if (is.null(T2)) 
 		T2 <- .sropt2T(retval)
 	retval$T2 <- T2
+	# not sure I should do this ...
+	retval$pval <- pT2(T2,retval$df1,retval$df2,lower.tail=FALSE)
 	class(retval) <- "sropt"
 	return(retval)
 }
@@ -636,17 +661,8 @@ sropt <- function(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL) {
 #' @param X matrix of returns, or \code{xts} object.
 #' @inheritParams sropt 
 #' @keywords univar 
-#' @return A list with containing the following components:
-#' \item{w}{the optimal portfolio.}
-#' \item{mu}{the estimated mean return vector.}
-#' \item{Sigma}{the estimated covariance matrix.}
-#' \item{df1}{the number of assets.}
-#' \item{df2}{the number of observed vectors.}
-#' \item{T2}{the Hotelling \eqn{T^2} statistic.}
-#' \item{sropt}{the optimal Sharpe statistic.}
-#' \item{drag}{the input \code{drag} term.}
-#' \item{ope}{the input \code{ope} term.}
-#' @seealso \code{\link{sr}}, sropt-distribution functions, 
+#' @return An object of class \code{sropt}.
+#' @seealso \code{\link{sropt}}, \code{\link{sr}}, sropt-distribution functions, 
 #' \code{\link{dsropt}, \link{psropt}, \link{qsropt}, \link{rsropt}}
 #' @rdname as.sropt
 #' @export 
@@ -702,12 +718,10 @@ as.sropt <- function(X,drag=0,ope=1,epoch="yr") {
 #' @S3method as.sropt default
 as.sropt.default <- function(X,drag=0,ope=1,epoch="yr") {
 	# somehow call sropt!
-	hotval <- .hotelling(X)
-	# what fucking bother.
-	quasi.sropt <- hotval[c("df2","T2")]
-	quasi.sropt$ope <- ope
-	quasi.sropt$drag <- drag
-	z.s <- .T2sropt(quasi.sropt)
+	hotval <- as.markowitz(X)
+	hotval <- c(hotval,list(ope=ope,drag=drag))
+	# get the zeta.s
+	z.s <- .T2sropt(hotval)
 	dim(z.s) <- c(1,1)
 
 	# this stinks
@@ -767,20 +781,21 @@ is.sropt <- function(x) inherits(x,"sropt")
 #' @export
 print.sropt <- function(x,...) {
 	Tval <- x$T2
-	pval <- pT2(Tval,x$df1,x$df2,lower.tail=FALSE)
-	coefs <- cbind(x$sropt,Tval,pval)
+	pval <- .sropt.pval(x)
+	ci <- confint(x,level=0.95)
+	coefs <- cbind(x$sropt,ci,Tval,pval)
 	colnames(coefs) <- c(paste(c("SR/sqrt(",x$epoch,")"),sep="",collapse=""),
+											colnames(ci)[1],colnames(ci)[2],
 											 "T^2 value","Pr(>T^2)")
 	rownames(coefs) <- .get_strat_names(x$sropt)
 	printCoefmat(coefs,P.values=TRUE,has.Pvalue=TRUE,
 							 digits=max(2, getOption("digits") - 3),
-							 cs.ind=c(1),tst.ind=c(2),dig.tst=2)
+							 cs.ind=c(1,2,3),tst.ind=c(4),dig.tst=2)
 }
 
 # SROPT methods#FOLDUP
 # get the T2-stat associated with an SROPT object.
-.sropt2T <- function(x) {
-	Tval <- x$T2
+.sropt2T <- function(x,Tval=x$T2) {
 	if (is.null(Tval)) {
 		tval <- .deannualize(x$sropt + x$drag,x$ope)
 		Tval <- x$df2 * (tval^2)
@@ -794,8 +809,314 @@ print.sropt <- function(x,...) {
 	z.star <- z.star - x$drag
 	return(z.star)
 }
+.sropt.pval <- function(x,...) {
+	Tval <- .sropt2T(x,...)
+	retv <- x$pval
+	if (is.null(retv)) 
+		retv <- pT2(Tval,x$df1,x$df2,lower.tail=FALSE)
+	return(retv)
+}
 #UNFOLD
 #UNFOLD
+
+########################################################################
+# Delta Squared Optimal Sharpe ratio#FOLDUP
+
+# spawn a "DEL_SROPT" object.
+#' @title Create an 'del_sropt' object.
+#'
+#' @description 
+#'
+#' Spawns an object of class \code{del_sropt}.
+#'
+#' @details
+#'
+#' The \code{del_sropt} class contains information about the difference
+#' between two rescaled T^2-statistics, useful for spanning
+#' tests, and inference on hedged portfolios.
+#' The following are list attributes of the object:
+#' \itemize{
+#' \item \code{sropt} The (optimal) Sharpe ratio statistic of
+#' the 'full' set of assets.
+#' \item \code{sropt_sub} The (optimal) Sharpe ratio statistic on
+#' some subset, or linear subspace, of the assets.
+#' \item \code{df1} The number of assets.
+#' \item \code{df2} The number of observations.
+#' \item \code{df1.sub} The number of degrees of freedom in the 
+#' hedge constraint.
+#' \item \code{drag} The drag term, which is the 'risk free rate' divided by
+#' the maximum risk.
+#' \item \code{ope} The 'observations per epoch'.
+#' \item \code{epoch} The string name of the 'epoch'.
+#' }
+#'
+#' For the most part, this constructor should \emph{not} be called directly,
+#' rather \code{\link{as.del_sropt}} should be called instead to compute the
+#' needed statistics.
+#'
+#' @usage
+#'
+#' del_sropt(z.s,z.sub,df1,df2,df1.sub,drag=0,ope=1,epoch="yr")
+#'
+#' @param z.s an optimum Sharpe ratio statistic, on some set of assets.
+#' @param z.sub an optimum Sharpe ratio statistic, on a linear subspace
+#' of the assets.  If larger than \code{z.s} an error is thrown.
+#' @param df1.sub the rank of the linear subspace of the hedge
+#' constraint. 
+#' by restricting attention to the subspace.
+#' @inheritParams sropt
+#' @template param-ope
+#' @keywords univar 
+#' @return a list cast to class \code{del_sropt}, with attributes
+#' \item{sropt}{the optimal Sharpe statistic.}
+#' \item{sropt.sub}{the optimal Sharpe statistic on the subspace.}
+#' \item{df1}{the number of assets.}
+#' \item{df2}{the number of observed vectors.}
+#' \item{df1.sub}{the input \code{df1.sub} term.}
+#' \item{drag}{the input \code{drag} term.}
+#' \item{ope}{the input \code{ope} term.}
+#' \item{T2}{the Hotelling \eqn{T^2} statistic.}
+#' \item{T2.sub}{the Hotelling \eqn{T^2} statistic on the subspace.}
+#'
+#' roll.own <- sropt(z.s=z,z.sub=zsub,df1=10,df2=1000,df1.sub=df1.sub,ope=ope)
+#'
+#' @seealso \code{\link{as.del_sropt}}
+#' @rdname del_sropt
+#' @export 
+#' @template etc
+#' @template del_sropt
+#' @template warning
+#'
+#' @note
+#' 2FIX: allow rownames?
+#'
+#' @examples 
+#' # roll your own.
+#' ope <- 253
+#'
+#' set.seed(as.integer(charToRaw("be determinstic")))
+#' n.stock <- 10
+#' X <- matrix(rnorm(1000*n.stock),nrow=1000)
+#' Sigma <- cov(X)
+#' mu <- colMeans(X)
+#' w <- solve(Sigma,mu)
+#' z <- t(mu) %*% w
+#' n.sub <- 6
+#' w.sub <- solve(Sigma[1:n.sub,1:n.sub],mu[1:n.sub])
+#' z.sub <- t(mu[1:n.sub]) %*% w.sub
+#' df1.sub <- n.stock - n.sub
+#'
+#' roll.own <- del_sropt(z.s=z,z.sub=z.sub,df1=10,df2=1000,
+#'  df1.sub=df1.sub,ope=ope)
+#' print(roll.own)
+#'
+del_sropt <- function(z.s,z.sub,df1,df2,df1.sub,drag=0,ope=1,epoch="yr") {
+	retval <- list(sropt = z.s,sropt.sub = z.sub,
+								 sropt.del = sqrt((z.s)^2 - (z.sub)^2),
+								 df1 = df1,df2 = df2,df1.sub = df1.sub,
+								 drag = drag,ope = ope,epoch = epoch)
+
+	retval$T2.sub <- .sropt2T(list(sropt=z.sub,drag=drag,ope=ope,df2=df2))
+	#retval$T2 <- .sropt2T(retval)
+	retval$T2 <- .sropt2T(list(sropt=z.s,drag=drag,ope=ope,df2=df2))
+	retval$T2.del <- retval$T2 - retval$T2.sub
+
+	class(retval) <- "del_sropt"
+	return(retval)
+}
+# the statistical guts.
+.del_sropt.asF <- function(x) {
+	# see Giri eqn (1.9) and section 3.
+	# make Z ~ B(bdf1,bdf2) under the null
+	nmin <- x$df2 - 1
+	Z.num <- (1 + x$T2.sub/nmin)
+	Z.denom <- (1 + x$T2/nmin)
+	R1 <- 1 - (1 / Z.num)
+	Z <- Z.num / Z.denom
+	bdf1 <- (x$df2 - x$df1) / 2
+	bdf2 <- (x$df1 - x$df1.sub) / 2
+	# transform beta to F; 
+	# define the F so that it is non-central under the alternative
+	# (on the top)
+	df1 <- 2*bdf2
+	df2 <- 2*bdf1;
+	Fval <- (df2 * (1-Z)) / (df1 * Z)
+	pval <- pf(Fval,df1,df2,lower.tail=FALSE)
+	# Giri's R1
+	retval <- list(Fval=Fval,df1=df1,df2=df2,N=x$df2,pval=pval,R1=R1)
+	return(retval)
+}
+#' @title Compute the Sharpe ratio of a hedged Markowitz portfolio.
+#'
+#' @description 
+#'
+#' Computes the Sharpe ratio of the hedged Markowitz portfolio of some observed returns.
+#'
+#' @details
+#' 
+#' Suppose \eqn{x_i}{xi} are \eqn{n}{n} independent draws of a \eqn{q}{q}-variate
+#' normal random variable with mean \eqn{\mu}{mu} and covariance matrix
+#' \eqn{\Sigma}{Sigma}. Let \eqn{G} be a \eqn{g \times q}{g x q} matrix
+#' of rank \eqn{g}.
+#' Let \eqn{\bar{x}}{xbar} be the (vector) sample mean, and 
+#' \eqn{S}{S} be the sample covariance matrix (using Bessel's correction). 
+#' Let
+#' \deqn{\zeta(w) = \frac{w^{\top}\bar{x} - c_0}{\sqrt{w^{\top}S w}}}{zeta(w) = (w'xbar - c0)/sqrt(w'Sw)}
+#' be the (sample) Sharpe ratio of the portfolio \eqn{w}{w}, subject to 
+#' risk free rate \eqn{c_0}{c0}.
+#'
+#' Let \eqn{w_*}{w*} be the solution to the portfolio optimization 
+#' problem:
+#' \deqn{\max_{w: 0 < w^{\top}S w \le R^2,\,G S w = 0} \zeta(w),}{max {zeta(w) | 0 < w'Sw <= R^2, G S w = 0},}
+#' with maximum value \eqn{z_* = \zeta\left(w_*\right)}{z* = zeta(w*)}.
+#'
+#' Note that if \code{ope} and \code{epoch} are not given, the 
+#' converter from \code{xts} attempts to infer the observations per epoch,
+#' assuming yearly epoch.
+#'
+#' @usage
+#'
+#' as.del_sropt(X,G,drag=0,ope=1,epoch="yr")
+#'
+#' @param X matrix of returns, or \code{xts} object.
+#' @param G an \eqn{g \times q}{g x q} matrix of hedge constraints. A 
+#' garden variety application would have \code{G} be one row of the
+#' identity matrix, with a one in the column of the instrument to be
+#' 'hedged out'.
+#' @inheritParams sropt 
+#' @keywords univar 
+#' @return An object of class \code{del_sropt}.
+#' @seealso \code{\link{del_sropt}}, \code{\link{sropt}}, 
+#' \code{\link{sr}}
+#' @rdname as.del_sropt
+#' @export 
+#' @template etc
+#' @template del_sropt
+#' @examples 
+#' nfac <- 5
+#' nyr <- 10
+#' ope <- 253
+#' # simulations with no covariance structure.
+#' # under the null:
+#' set.seed(as.integer(charToRaw("be determinstic")))
+#' Returns <- matrix(rnorm(ope*nyr*nfac,mean=0,sd=0.0125),ncol=nfac)
+#' # hedge out the first one:
+#' G <- matrix(diag(nfac)[1,],nrow=1)
+#' asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
+#' print(asro)
+#' G <- diag(nfac)[c(1:3),]
+#' asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
+#' # compare to sropt on the remaining assets
+#' # they should be close, but not exact.
+#' asro.alt <- as.sropt(Returns[,4:nfac],drag=0,ope=ope)
+#' \dontrun{
+#' # using real data.
+#' if (require(quantmod)) {
+#'   get.ret <- function(sym,...) {
+#'     OHLCV <- getSymbols(sym,auto.assign=FALSE,...)
+#'     lrets <- diff(log(OHLCV[,paste(c(sym,"Adjusted"),collapse=".",sep="")]))
+#'     # chomp first NA!
+#'     lrets[-1,]
+#'   }
+#'   get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
+#'   some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
+#'   # hedge out SPY
+#'   G <- diag(dim(some.rets)[2])[5,]
+#'   asro <- as.del_sropt(some.rets,G)
+#' }
+#' }
+as.del_sropt <- function(X,G,drag=0,ope=1,epoch="yr") {
+	UseMethod("as.del_sropt",X)
+}
+#' @rdname as.del_sropt
+#' @method as.del_sropt default
+#' @S3method as.del_sropt default
+as.del_sropt.default <- function(X,G,drag=0,ope=1,epoch="yr") {
+	# somehow call sropt!
+	hotval <- as.markowitz(X)
+	hotval <- c(hotval,list(ope=ope,drag=drag))
+	# get the zeta.s
+	z.s <- .T2sropt(hotval)
+	dim(z.s) <- c(1,1)
+	if (!is.matrix(G)) G <- matrix(G,nrow=1)
+
+	if (length(hotval$w) != dim(G)[2]) stop("wrong size hedge constraint?")
+
+	hotval.sub <- markowitz(hotval$mu,hotval$Sigma,hotval$df2,H=G)
+	hotval.sub <- c(hotval.sub,list(ope=ope,drag=drag))
+	# get the zeta.sub
+	z.sub <- .T2sropt(hotval.sub)
+	dim(z.sub) <- c(1,1)
+
+	# this stinks
+	retv <- del_sropt(z.s=z.s,z.sub=z.sub,df1=hotval$df1,df2=hotval$df2,
+										df1.sub=dim(G)[1],drag=drag,ope=ope,epoch=epoch)
+
+	return(retv)
+}
+#' @rdname as.del_sropt
+#' @method as.del_sropt xts
+#' @S3method as.del_sropt xts
+as.del_sropt.xts <- function(X,G,drag=0,ope=1,epoch="yr") {
+	if (missing(ope)) {
+		ope <- .infer_ope_xts(X)
+	}
+	retval <- as.del_sropt.default(X,G,drag=drag,ope=ope,epoch=epoch)
+	return(retval)
+}
+#' @title Is this in the "del_sropt" class?
+#'
+#' @description 
+#'
+#' Checks if an object is in the class \code{'del_sropt'}
+#'
+#' @details
+#'
+#' To satisfy the minimum requirements of an S3 class.
+#'
+#' @usage
+#'
+#' is.del_sropt(x)
+#'
+#' @param x an object of some kind.
+#' @return a boolean.
+#' @seealso del_sropt
+#' @template etc
+#' @family del_sropt
+#' @export
+#'
+#' @examples 
+#' roll.own <- del_sropt(z.s=2,z.sub=1,df1=10,df2=1000,df1.sub=3,ope=1,epoch="yr")
+#' is.sropt(roll.own)
+is.del_sropt <- function(x) inherits(x,"del_sropt")
+
+#' @rdname print
+#' @method print del_sropt
+#' @S3method print del_sropt
+#' @export
+print.del_sropt <- function(x,...) {
+	Fandp <- .del_sropt.asF(x)
+	ci <- confint(x,level=0.95)
+	coefs <- cbind(x$sropt.del,ci,Fandp$Fval,Fandp$pval)
+	colnames(coefs) <- c(paste(c("SR/sqrt(",x$epoch,")"),sep="",collapse=""),
+											colnames(ci)[1],colnames(ci)[2],
+											 "F value","Pr(>F)")
+	rownames(coefs) <- .get_strat_names(x$sropt)
+	printCoefmat(coefs,P.values=TRUE,has.Pvalue=TRUE,
+							 digits=max(2, getOption("digits") - 3),
+							 cs.ind=c(1),tst.ind=c(2),dig.tst=2)
+}
+#UNFOLD
+
+## test them:
+#X <- matrix(rnorm(1000*10,0.1),ncol=10)
+#G <- diag(dim(X)[2])[1,]
+#foo <- as.del_sropt(X,G)
+#print(foo)
+
+#X <- matrix(rnorm(1000*10,0.00001),ncol=10)
+#foo <- as.del_sropt(X,G)
+#print(foo)
 
 #for vim modeline: (do not edit)
 # vim:fdm=marker:fmr=FOLDUP,UNFOLD:cms=#%s:syn=r:ft=r

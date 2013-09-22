@@ -34,14 +34,7 @@
   defaulting to 'yr'.}
 }
 \value{
-  A list with containing the following components:
-  \item{w}{the optimal portfolio.} \item{mu}{the estimated
-  mean return vector.} \item{Sigma}{the estimated
-  covariance matrix.} \item{df1}{the number of assets.}
-  \item{df2}{the number of observed vectors.} \item{T2}{the
-  Hotelling \eqn{T^2} statistic.} \item{sropt}{the optimal
-  Sharpe statistic.} \item{drag}{the input \code{drag}
-  term.} \item{ope}{the input \code{ope} term.}
+  An object of class \code{sropt}.
 }
 \description{
   Computes the Sharpe ratio of the Markowitz portfolio of
@@ -127,13 +120,14 @@ if (require(quantmod)) {
   Steven E. Pav \email{shabbychef@gmail.com}
 }
 \seealso{
-  \code{\link{sr}}, sropt-distribution functions,
-  \code{\link{dsropt}, \link{psropt}, \link{qsropt},
-  \link{rsropt}}
+  \code{\link{sropt}}, \code{\link{sr}}, sropt-distribution
+  functions, \code{\link{dsropt}, \link{psropt},
+  \link{qsropt}, \link{rsropt}}
 
-  Other sropt: \code{\link{confint.sr}},
-  \code{\link{confint.sropt}}, \code{\link{dsropt}},
-  \code{\link{is.sropt}}, \code{\link{power.sropt_test}},
+  Other sropt: \code{\link{confint.del_sropt}},
+  \code{\link{confint.sr}}, \code{\link{confint.sropt}},
+  \code{\link{dsropt}}, \code{\link{is.sropt}},
+  \code{\link{power.sropt_test}},
   \code{\link{reannualize}}, \code{\link{reannualize.sr}},
   \code{\link{reannualize.sropt}}, \code{\link{sropt}},
   \code{\link{sropt_test}}
