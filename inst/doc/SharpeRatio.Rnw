@@ -9,6 +9,8 @@
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+% for therefore
+\usepackage{amssymb}
 \usepackage{hyperref}
 \usepackage[square,numbers]{natbib}
 %\usepackage[authoryear]{natbib}
@@ -91,7 +93,8 @@ lseq <- function(from,to,length.out) {
 
 \title{Notes on the \txtSR}
 \author{Steven E. Pav %
-\thanks{\email{shabbychef@gmail.com}}}
+\thanks{\email{shabbychef@gmail.com} This document is a bit of a hodgepodge at
+the moment, and is in a constant state of flux.}}
 %\date{\today, \currenttime}
 
 \maketitle
@@ -103,7 +106,11 @@ Herein is an incomplete collection of facts about the \txtSR, and the
 the \txtSR and the \tstat-test, and between the Markowitz portfolio and
 the Hotelling \Tstat statistic are explored. Many classical results 
 for testing means can be easily translated into tests on assets and
-portfolios.
+portfolios. A `unified' framework is described which combines the mean
+and covariance parameters of a multivariate distribution into the
+uncentered second moment of a related random variable. This trick
+streamlines some multivariate computations, and gives the asymptotic
+distribution of the sample Markowitz portfolio.
 \end{abstract}%UNFOLD
 
 \tableofcontents
@@ -174,6 +181,7 @@ or the \tstat-test can be translated into interesting facts about the \txtSR:
 one can construct hypothesis
 tests for the SNR, find the power and sample size of those tests, compute confidence intervals of the SNR, 
 correct for deviations from assumptions, \etc
+%UNFOLD
 
 \subsection{Tests involving the \txtSR}%FOLDUP
 
@@ -192,28 +200,29 @@ is greater than \tqnt{1-\typeI}{\ssiz - 1}, the $1-\typeI$ quantile of the
 degrees of freedom.
 
 If $\pmu = \pmu[1] > \pmu[0]$, then the power of this test is
-$$1 - \nctcdf{\tqnt{1-\typeI}{\ssiz - 1}}{\nctp[1],\ssiz-1},$$
-where $\nctp[1] = \sqrt{\ssiz}\left(\pmu[1] - \pmu[0]\right)/\psig$ and $\nctcdf{x}{\nctp,\ssiz - 1}$ is
+$$1 - \nctcdf{\tqnt{1-\typeI}{\ssiz - 1}}{\ssiz-1}{\nctp[1]},$$
+where $\nctp[1] = \sqrt{\ssiz}\left(\pmu[1] - \pmu[0]\right)/\psig$ and
+$\nctcdf{x}{\ssiz - 1}{\nctp}$ is
 the cumulative distribution function of the non-central \tstat-distribution with non-centrality parameter
 \nctp and $\ssiz-1$ degrees of freedom.  \cite{scholz07nct}
 
 \item A one-sample test for signal-to-noise ratio (SNR) involves the \tstat-statistic. To test:
 $$H_0 : \psnr = \psnr[0]\quad\mbox{versus}\quad H_1 : \psnr > \psnr[0],$$
 we reject if the statistic $\tstat = \sqrt{\ssiz}\ssr$ is greater than
-\nctqnt{1-\typeI}{\nctp[0],\ssiz - 1}, the $1-\typeI$ quantile of the
+\nctqnt{1-\typeI}{\ssiz - 1}{\nctp[0]}, the $1-\typeI$ quantile of the
 non-central \tstat-distribution with $\ssiz - 1$
 degrees of freedom and non-centrality parameter $\nctp[0] = \sqrt{\ssiz}\psnr[0]$.
 
 If $\psnr = \psnr[1] > \psnr[0]$, then the power of this test is 
-$$1 - \nctcdf{\nctqnt{1-\typeI}{\nctp[0],\ssiz - 1}}{\nctp[1],\ssiz-1},$$
-where $\nctp[1] = \sqrt{\ssiz}\psnr[1]$ and $\nctcdf{x}{\nctp,\ssiz - 1}$ is
+$$1 - \nctcdf{\nctqnt{1-\typeI}{\ssiz - 1}{\nctp[0]}}{\ssiz-1}{\nctp[1]},$$
+where $\nctp[1] = \sqrt{\ssiz}\psnr[1]$ and $\nctcdf{x}{\ssiz - 1}{\nctp}$ is
 the cumulative distribution function of the non-central \tstat-distribution with non-centrality parameter
 \nctp and $\ssiz-1$ degrees of freedom.  \cite{scholz07nct}
 
 \end{compactenum}
 %UNFOLD
 
-\subsection{Moments of the Sharpe Ratio}%FOLDUP
+\subsection{Moments of the \txtSR}%FOLDUP
 
 Based on the moments of the non-central \tstat-distribution, the expected value of the \txtSR is 
 \emph{not} the signal-to-noise ratio (SNR), rather there is a systematic geometric bias.  
@@ -227,8 +236,12 @@ non-central \tstat-distribution with parameter \nctp and $\ssiz-1$ degrees of fr
 \end{split}
 \label{eqn:tstatmoms}
 \end{equation}
-Here $\tbias = \sqrt{\frac{\ssiz-1}{2}} \GAM{(\ssiz-2)/2}/\GAM{(\ssiz-1)/2}$, is the
-'bias term'. 
+Here $\tbias = \sqrt{\frac{\ssiz-1}{2}} \GAM{(\ssiz-2)/2}/\GAM{(\ssiz-1)/2}$, 
+is the 'bias term'. The geometric bias term is related to the constant
+$c_4$ from the statistical control literature via 
+$\tbias[\ssiz] = \frac{\ssiz-1}{\ssiz-2}c_4\wrapParens{\ssiz}.$
+% 2FIX: ?? 
+% which is often referred to as $c_4\wrapParens{\ssiz}$ in the statistical control literature.
 These can be trivially translated into equivalent facts regarding the \txtSR:
 \begin{equation}
 \begin{split}
@@ -238,13 +251,6 @@ These can be trivially translated into equivalent facts regarding the \txtSR:
 \label{eqn:sratmoms}
 \end{equation}
 
-The geometric bias term \tbias does not equal one, thus the sample t statistic is a \emph{biased} estimator of
-the non-centrality parameter, \nctp when $\nctp \ne 0$, and the \txtSR is a biased estimator of the signal-to-noise
-ratio when it is nonzero. \cite{CambridgeJournals:4493808} The bias term is a function of sample size only, 
-and approaches one fairly quickly.
-%and approaches one fairly quickly, 
-%see \figref{sr_bias}.  
-However, there are situations in which it might be unacceptably large. 
 <<'generate_tbias',include=FALSE>>=
 # the bias of the t
 f_tbias <- function(n) { 
@@ -261,36 +267,50 @@ f_apx_tbias2 <- function(n) {
 n <- 12
 tbias <- f_tbias(n)
 @
-For example, if one was looking at one year's worth of data with monthly marks, one would have a fairly large bias: 
-$\tbias = \Sexpr{round(tbias,digits=4)}$, \ie almost eight percent.  The bias is multiplicative and larger than one, 
-so the \txtSR will overestimate the SNR when the latter is positive, and underestimate it when it is negative.
-The existence of this bias was first described by Miller and Gehr. \cite{CambridgeJournals:4493808} 
 
-%<<'sr_bias',fig.cap="The approximate percent bias of the \\txtSR, $\\tbias - 1$ is given versus sample size, shown in black.  In green the approximation given by $\\tbias[\\ssiz+1] \\approx 1 + \\frac{3}{4\\ssiz} + \\frac{25}{32\\ssiz^2}$ is plotted.",include=FALSE>>=
+The geometric bias term \tbias does not equal one, thus the sample t statistic is a \emph{biased} estimator of
+the non-centrality parameter, \nctp when $\nctp \ne 0$, and the \txtSR is a biased estimator of the signal-to-noise
+ratio when it is nonzero. \cite{CambridgeJournals:4493808} The bias term is a function of sample size only, 
+and approaches one fairly quickly.
+%and approaches one fairly quickly, 
+%see \figref{sr_bias}.  
+However, there are situations in which it might be unacceptably large. 
+
+%%<<'sr_beast',echo=FALSE,fig.cap="The approximate percent bias of the \\txtSR, $\\tbias - 1$ is given versus sample size.",cache=FALSE>>=
+%<<'sr_bias',echo=FALSE,fig.cap="The approximate relative bias of the \\txtSR, $\\tbias - 1$ is given versus sample size, shown in black.  In green the approximation given by $\\tbias[\\ssiz+1] \\approx 1 + \\frac{3}{4\\ssiz} + \\frac{25}{32\\ssiz^2}$ is plotted.">>=
 %nvals <- 4:256
 %tbias <- -1 + sapply(nvals, f_tbias)
 %avals <- -1 + sapply(nvals, f_apx_tbias2)
 %plot(nvals,tbias,type="l",log="xy",col="black",axes=F,ylab="bias in Sharpe ratio",xlab="number of samples")
-%#lines(nvals,avals,col="green")
-%#legend("topright",c("actual value","approximation"),lty=c(1,1),col=c("black","green"))
-%#axis(1, at=(c(4,8,16,32,64,128,256)))
-%#axis(2, at=(c(0.002,0.004,0.1,0.02,0.04,0.1,0.2,0.4)))
+%lines(nvals,avals,col="green")
+%legend("topright",c("actual value","approximation"),lty=c(1,1),col=c("black","green"))
+%axis(1, at=(c(4,8,16,32,64,128,256)))
+%axis(2, at=(c(0.002,0.004,0.1,0.02,0.04,0.1,0.2,0.4)))
 %@
+
+For example, if one was looking at one year's worth of data with monthly marks, one would have a fairly large bias: 
+$\tbias = \Sexpr{round(tbias,digits=4)}$, \ie almost eight percent.  The bias is multiplicative and larger than one, 
+so the \txtSR will overestimate the SNR when the latter is positive, and underestimate it when it is negative.
+The existence of this bias was first described by Miller 
+and Gehr. \cite{CambridgeJournals:4493808,jobsonkorkie1981} 
 
 A decent asymptotic approximation \cite{dlmf_gammarat} to \tbias is given by
 $$
 \tbias[\ssiz+1] = 1 + \frac{3}{4\ssiz} + \frac{25}{32 \ssiz^2} + \bigo{\ssiz^{-3}}.
 $$
-
-
 %UNFOLD
 
-\subsection{Asymptotics and Confidence Intervals}%FOLDUP
+\subsection{Asymptotics and confidence intervals}%FOLDUP
 
 \label{subsec:asymptotics_and_ci}
 
-Lo showed that the \txtSR is asymptotically normal in \ssiz with standard deviation 
-$\sqrt{\fracc{(1 + \half[\ssr^2])}{\ssiz}}.$ \cite{lo2002} The equivalent result concerning
+Lo showed that the \txtSR is asymptotically normal in \ssiz with 
+standard deviation \cite{lo2002}
+\begin{equation}
+se \approx \sqrt{\frac{1 + \half[\psnr^2]}{\ssiz}}.
+\label{eqn:srse_lo}
+\end{equation}
+The equivalent result concerning
 the non-central \tstat-distribution (which, again, is the \txtSR up to scaling by $\sqrt{\ssiz}$)
 was published 60 years prior by Johnson and Welch. \cite{Johnson:1940}
 Since the SNR, \ssr, is unknown, Lo suggests approximating it with the \txtSR, giving 
@@ -300,10 +320,11 @@ $$
 $$
 where \qnorm{\typeI/2} is the $\typeI/2$ quantile of the normal distribution. In practice,
 the asymptotically equivalent form 
-$$
+\begin{equation}
 \ssr \pm \qnorm{\typeI/2} \sqrt{\frac{1 + \half[\ssr^2]}{\ssiz - 1}}
-$$
-has better small sample coverage, at least for normal returns. 
+\label{eqn:srci_lo}
+\end{equation}
+has better small sample coverage for normal returns. 
 
 According to Walck,
 $$
@@ -318,26 +339,45 @@ which is the \txtSR up to scaling. \cite{walck:1996}
 %$$
 
 This suggests the following approximate $1 - \typeI$ confidence interval on the SNR:
-$$
+\begin{equation}
 \ssr \left(1 - \frac{1}{4(\ssiz - 1)}\right) \pm \qnorm{\typeI/2} \sqrt{\frac{1}{\ssiz} + \frac{\ssr^2}{2(\ssiz - 1)}}.
-$$
+\label{eqn:srci_walck}
+\end{equation}
 
 The normality results generally hold for large \ssiz, small \psnr, and assume
 normality of \reti. \cite{Johnson:1940} We can find confidence intervals on \psnr 
 assuming only normality of \reti (or large \ssiz and an appeal to the Central Limit Theorem),
 by inversion of the cumulative distribution of the non-central \tstat-distribution. A $1 - \typeI$ 
-symmetric confidence interval on \psnr has endpoints defined implicitly by
-$$1 - \typeI/2 = \nctcdf{\ssr}{\sqrt{\ssiz}\psnr[l],\ssiz-1},\quad
-\typeI/2 = \nctcdf{\ssr}{\sqrt{\ssiz}\psnr[u],\ssiz-1},$$
-where $\nctcdf{x}{\nctp,\ssiz-1}$ is the CDF of the non-central \tstat-distribution with 
+symmetric confidence interval on \psnr has endpoints
+$\wrapBracks{\psnr[l],\psnr[u]}$ defined implicitly by
+\begin{equation}
+1 - \typeI/2 = \nctcdf{\ssr}{\ssiz-1}{\sqrt{\ssiz}\psnr[l]},\quad
+\typeI/2 = \nctcdf{\ssr}{\ssiz-1}{\sqrt{\ssiz}\psnr[u]},
+\label{eqn:srci_tinvert}
+\end{equation}
+where $\nctcdf{x}{\ssiz-1}{\nctp}$ is the CDF of the non-central \tstat-distribution with 
 non-centrality parameter \nctp and $\ssiz - 1$ degrees of freedom.
 Computationally, this method requires one to invert the CDF 
 (\eg by Brent's method \cite{Brent:1973}), which is slower than 
 approximations based on asymptotic normality.
 
-In practice these three confidence interval approximations give very similar coverage, with no
-appreciable difference when $\ssiz > 30$ or so. For small sample sizes, the corrected form of
-Lo's approximation is slightly liberal (Lo's original formulation is too conservative). 
+Mertens gives the form of standard error
+\begin{equation}
+se \approx \sqrt{\frac{1 + \frac{2 + \pcmom[4]}{4}\psnr^2 -
+\pcmom[3]\psnr}{\ssiz}},
+\label{eqn:srse_mertens}
+\end{equation}
+where \pcmom[3] is the skew, and \pcmom[4]
+is the \emph{excess} kurtosis of the returns 
+distribution.  \cite{mertens2002comments,Opdyke2007,sref2011}
+These are both zero for normally distributed returns, and so Mertens' form 
+reduces to Lo's form.  These are unknown in practice, and 
+have to be estimated from the data, which results in 
+some mis-estimation of the standard error when skew is extreme.
+
+%In practice these three confidence interval approximations give very similar coverage, with no
+%appreciable difference when $\ssiz > 30$ or so. For small sample sizes, the corrected form of
+%Lo's approximation is slightly liberal (Lo's original formulation is too conservative). 
 %The empirical coverage of these three methods at different sample sizes from a Monte Carlo experiment 
 %(assuming normal \reti) is given in \figref{sharpe_ci}.
 
@@ -405,17 +445,807 @@ Lo's approximation is slightly liberal (Lo's original formulation is too conserv
 %%UNFOLD
 %%UNFOLD
 
-There are approaches to estimating the standard error of the \txtSR taking
-into account the third and higher moments of the returns. See
-Opdyke \cite{Opdyke2007} or Baily and Lopez de Prado \cite{sref2011}.
+%There are approaches to estimating the standard error of the \txtSR taking
+%into account the third and higher moments of the returns. See
+%Opdyke \cite{Opdyke2007} or Baily and Lopez de Prado \cite{sref2011}.
+%UNFOLD
+
+\subsection{Asymptotic Distribution of \txtSR}%FOLDUP
+
+\label{subsec:asymptotic_sr}
+
+Here I derive the asymptotic distribution of \txtSR, following
+Jobson and Korkie 
+\emph{inter alia}. \cite{jobsonkorkie1981,lo2002,mertens2002comments,Ledoit2008850,Leung2008,Wright2012} 
+Consider the case of \nlatf possibly correlated returns streams,
+with each observation denoted by \vreti.
+Let \pvmu be the \nlatf-vector of population means, and let
+\pvmom[2] be the \nlatf-vector of the uncentered second moments.
+Let \pvsnr be the vector of SNR of the assets. Let \rfr be the
+`risk free rate'. We have
+$$
+\pvsnr[i] = \frac{\pvmu[i] - \rfr}{\sqrt{\pvmom[2,i] - \pvmu[i]^2}}.
+$$
+
+Consider the $2\nlatf$ vector of \vreti, `stacked' with
+\vreti (elementwise) squared, \vcat{\vreti}{\vreti^2}.
+The expected value of this vector is \vcat{\pvmu}{\pvmom[2]};
+let \pvvar be the variance of this vector, assuming it exists.
+
+Given \ssiz observations of \vreti, consider the simple
+sample estimate
+$$
+\vcat{\svmu}{\svmom[2]} \defeq
+\frac{1}{\ssiz}\sum_{i}^{\ssiz} \vcat{\vreti}{\vreti^2}.
+$$
+Under the multivariate central limit theorem \cite{wasserman2004all}
+\begin{equation}
+\sqrt{\ssiz}\wrapParens{\vcat{\svmu}{\svmom[2]} - \vcat{\pvmu}{\pvmom[2]}}
+\rightsquigarrow 
+\normlaw{0,\pvvar}.
+\label{eqn:mvclt}
+\end{equation}
+
+Let \svsr be the sample \txtSR computed from the estimates \svmu and
+\svmom[2]: 
+$\svsr[i] = \fracc{\wrapParens{\svmu[i]-\rfr}}{\sqrt{\svmom[2,i] - \svmu[i]^2}}.
+$
+By the multivariate delta method, 
+\begin{equation}
+\sqrt{\ssiz}\wrapParens{\svsr - \pvsnr} 
+\rightsquigarrow 
+\normlaw{0,\qoform{\pvvar}{\wrapParens{\dbyd{\pvsnr}{\vcat{\pvmu}{\pvmom[2]}}}}}.
+\label{eqn:delmethod}
+\end{equation}
+Here the derivative takes the form of two $\nlatf \times \nlatf$
+diagonal matrices pasted together side by side:
+\begin{equation}
+\begin{split}
+\dbyd{\pvsnr}{\vcat{\pvmu}{\pvmom[2]}} 
+&= 
+\onebytwo{\diag{\frac{\pvmom[2] - \pvmu\rfr}{\wrapParens{\pvmom[2] - \pvmu^2}^{3/2}}}}{ 
+\diag{\frac{\rfr-\pvmu}{2 \wrapParens{\pvmom[2] - \pvmu^2}^{3/2}}}},\\
+&=  
+\onebytwo{\diag{\frac{\pvsigma + \pvmu\pvsnr}{\pvsigma^2}}}
+{\diag{\frac{- \pvsnr}{2 \pvsigma^2}}}.
+\end{split}
+\label{eqn:sr_deriv}
+\end{equation}
+where $\diag{\vect{z}}$ is the matrix with vector \vect{z} on its diagonal,
+and where the vector operations above are all performed elementwise.
+
+In practice, the population values, \pvmu, \pvmom[2], \pvvar
+are all unknown, and so the asymptotic variance has to be estimated,
+using the sample. Letting \svvar be some sample estimate of \pvvar,
+we have the approximation
+\begin{equation}
+\svsr \approx 
+\normlaw{\pvsnr,\oneby{\ssiz}\qoform{\svvar}{\wrapParens{\dbyd{\svsr}{\vcat{\svmu}{\svmom[2]}}}}},
+\label{eqn:apx_srdist}
+\end{equation}
+where the derivatives are formed by plugging in the sample estimates
+into \eqnref{sr_deriv}.  \cite{lo2002,mertens2002comments}
+
+\subsubsection{Scalar case}
+
+For the $\nlatf=1$ case, \pvvar 
+takes the form
+\begin{equation}
+\label{eqn:pvvar_def}
+\begin{split}
+\pvvar &= 
+\twobytwossym{\pmom[2] - \pmu^2}{\pmom[3] - \pmu\pmom[2]}{\pmom[4] - \pmom[2]^2},\\
+&= \twobytwossym{\psigma^2}{\psigma^2\wrapParens{\psigma\pcmom[3] +
+2\pmu}}{\psigma^4\wrapParens{\pcmom[4] + 2} + 4 \psigma^3 \pmu\pcmom[3] +
+4 \psigma^2\pmu^2},\\
+&= \psigma^2 \twobytwossym{1}{\psigma\pcmom[3] +
+2\pmu}{\psigma^2\wrapParens{\pcmom[4] + 2} + 4 \psigma \pmu\pcmom[3] + 4
+\pmu^2}.
+\end{split}
+\end{equation}
+where \pmom[i] is the uncentered \kth{i} moment of \reti, \pcmom[3] is the
+skew, and \pcmom[4] is the excess kurtosis. After much
+algebraic simplification, the asymptotic variance of \txtSR is given
+by Mertens' formula, \eqnref{srse_mertens}:
+\begin{equation}
+\svsr \approx 
+\normlaw{\pvsnr,\oneby{\ssiz}\wrapParens{1 - \svsr \pcmom[3] + \frac{\pcmom[4]
++ 2}{4} \svsr^2}}.
+\label{eqn:apx_scalar_srdist}
+\end{equation}
+Note that Mertens' equation applies even though our 
+definition of \txtSR includes a risk-free rate, \rfr.
+
+\subsubsection{Tests of equality of multiple \txtSR}%FOLDUP
+
+Now let $\vect{g}$ be some vector valued function of the vector \pvsnr.
+Applying the delta method,
+\begin{equation}
+\sqrt{\ssiz}\wrapParens{\funcit{\vect{g}}{\svsr} - \funcit{\vect{g}}{\pvsnr}} 
+\rightsquigarrow 
+\normlaw{0,\qoform{\pvvar}{\wrapParens{\dbyd{\vect{g}}{\pvsnr}\dbyd{\pvsnr}{\vcat{\pvmu}{\pvmom[2]}}}}}
+\label{eqn:delmethod_II}
+\end{equation}
+
+To compare whether the \txtSR of \nlatf assets are equal,
+given \ssiz contemporaneous observations of their returns,
+let $\vect{g}$ be the function which constructs the $\nlatf-1$
+contrasts: 
+$$
+\funcit{\vect{g}}{\pvsnr} = 
+\asvec{\pvsnr[1] - \pvsnr[2],\ldots,\pvsnr[\nlatf-1] - \pvsnr[\nlatf]}.
+$$
+One is then testing the null hypothesis $H_0: \funcit{\vect{g}}{\pvsnr} = 0$.
+Asymptotically, under the null, 
+$$
+\ssiz
+\qiform{\wrapParens{\qoform{\pvvar}{\wrapParens{\dbyd{\vect{g}}{\pvsnr}\dbyd{\pvsnr}{\vcat{\pvmu}{\pvmom[2]}}}}}}{\funcit{\vect{g}}{\svsr}}
+\sim \chisqlaw{\nlatf-1}.
+$$
+For the more general case, where \vect{g} need not be the vanilla contrasts,
+the chi-square degrees of freedom is the rank of \dbyd{\vect{g}}{\pvsnr}.
+
+There are a number of modifications of this basic method: 
+Leung and Wong described the basic method.  \cite{Leung2008}
+Wright \etal suggest that the test statistic be transformed to an
+approximate \flaw{}-statistic. \cite{Wright2012} 
+Ledoit and Wolf propose
+using HAC estimators or bootstrapping to construct \svvar. 
+\cite{Ledoit2008850} 
+
+For the case of scalar-valued $g$ (\eg for comparing $\nlatf=2$
+strategies), one can construct a two-sided test via an asymptotic
+\tstat-approximation:
+$$
+\sqrt{\ssiz}\funcit{g}{\svsr}{\wrapParens{\qoform{\pvvar}{\wrapParens{\dbyd{{g}}{\pvsnr}\dbyd{\pvsnr}{\vcat{\pvmu}{\pvmom[2]}}}}}}^{-\half}
+\sim \tlaw{\ssiz-1}.
+$$
+
+In all the above, one can construct asymptotic approximations of
+the test statistics under the alternative, allowing power analysis
+or computation of confidence regions on \funcit{\vect{g}}{\pvsnr}.
 %UNFOLD
 
 %UNFOLD
 
+\subsection{Power and sample size}%FOLDUP
+
+\label{subsec:SR_power_and_ssize}
+
+Consider the \tstat-test for the null hypothesis $H_0: \pmu = 0$.
+This is equivalent to testing $H_0: \psnr = 0$. A power rule ties
+together the (unknown) true effect size (\psnr), sample size (\ssiz),
+type I and type II rates.  Some example use cases:
+
+\begin{compactenum}
+\item Suppose you wanted to estimate the mean return of a pairs trade, but the stocks have only
+existed for two years. Is this enough data assuming the SNR is 2.0 \yrtomhalf?
+\item Suppose investors in a fund you manage want to `see some returns' within a year otherwise
+they will withdraw their investment.
+What SNR should you be hunting for so that, with probability one half,
+the actual returns will `look good' over the next year?
+\item Suppose you observe three months of a fund's returns, and you fail to reject the null under the
+one sample \tstat-test.  Assuming the SNR of the process is 1.5 \yrtomhalf, what is the probability of a type II error?
+\end{compactenum}
+
+<<'f_tpower',echo=FALSE>>=
+# the power of the univariate t-test;
+f_tpower <- function(n,rho = 0,alpha = 0.05) {
+	f_tpower_ncp(ncp = sqrt(n) * rho,n = n,alpha = alpha)
+}
+
+# the power of the univariate t-test as function of the ncp
+f_tpower_ncp <- function(ncp,n,alpha = 0.05) {
+	pt(qt(1-alpha,n-1),df = n-1,ncp = ncp,lower.tail = FALSE)
+}
+
+# the power of an f-test 
+f_fpower <- function(df1,df2,ncp,alpha = 0.05) {
+	pf(qf(alpha,df1=df1,df2=df2,ncp=0,lower.tail=FALSE),df1 = df1,df2 = df2,ncp = ncp,lower.tail = FALSE)
+}
+
+# find the sample size for a given power of the univariate t-test
+f_treqsize <- function(rho,powr = 0.80,alpha = 0.05) {
+	zz <- uniroot(function(n,rho,alpha,powr)(f_tpower(n,rho,alpha) - powr),
+								c(8,20 * 10 / (rho*rho)),rho = rho,powr = powr,alpha = alpha)
+	return(zz$root)
+}
+@
+
+For sufficiently large sample size (say $\ssiz \ge 30$), the power law 
+for the \tstat-test is well approximated by 
+\begin{equation}
+\ssiz \approx \frac{c}{\psnrsq},
+\label{eqn:tstatpowerlaw}
+\end{equation}
+where the constant $c$ depends on the type I rate and the type II rates,
+and whether one is performing a one- or two-sided test.
+This relationship was first noted by Johnson and Welch.  \cite{Johnson:1940}
+Unlike the type I rate, which is traditionally set at 0.05, there is 
+no widely accepted traditional value of power.  
+
+Values of the coefficient $c$ are given for one and two-sided t-tests
+at different power levels in \tabref{ttestpower}.  
+The case of $\typeI = 0.05,\powr = 0.80$ is known as 
+``Lehr's rule''. \cite{vanBelle2002_STRUTs,Lehr16} 
+<<'sr_power_table',echo=FALSE,results='asis'>>=
+dpy <- 253
+rhovals <- seq(0.5,3.0,by=0.10)
+rhovals_day <- rhovals / sqrt(dpy)
+samps25.1 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, powr = 0.25))
+samps50.1 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, powr = 0.50))
+samps80.1 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, powr = 0.80))
+#2sided test
+samps25.2 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, alpha=0.025, powr = 0.25))
+samps50.2 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, alpha=0.025, powr = 0.50))
+samps80.2 <- (1/dpy) * unlist(lapply(rhovals_day, f_treqsize, alpha=0.025, powr = 0.80))
+foo <- data.frame("one sided" = c(median(samps25.1 * rhovals**2),median(samps50.1 * rhovals**2),median(samps80.1 * rhovals**2)),
+									"two sided" = c(median(samps25.2 * rhovals**2),median(samps50.2 * rhovals**2),median(samps80.2 * rhovals**2)),
+									row.names = c("power = 0.25","power = 0.50","power = 0.80"))
+library(xtable)
+xres <- xtable(foo,label="tab:ttestpower",caption="Scaling of sample size with respect to $\\psnr^2$ required to achieve a fixed power in the t-test, at a fixed $\\typeI = 0.05$ rate.")
+print(xres,include.rownames=TRUE)
+@
+
+%#data <- data.frame(rho = rhovals,s50 = samps50,s80 = samps80)
+%#mod50 <- lm(log(s50) ~ log(rho),data)
+%#mod80 <- lm(log(s80) ~ log(rho),data)
+%#print(exp(mod50$coefficients[1]))
+%#print(exp(mod80$coefficients[1]))
+
+%The value $c=1$, \ie using sample size $\ssiz =  \frac{1}{\psnr^2}$ has power approximately equal to 
+%2FIX?
+
+Consider now the scaling in the rule $\ssiz \approx c\psnr^{-2}.$
+If the SNR \psnr is given in daily units, the sample size will be in days. One annualizes \psnr by multiplying
+by the square root of the number of days per year, which downscales \ssiz appropriately. That is, if \psnr is
+quoted in annualized terms, this rule of thumb gives the number of \emph{years} of observations required. This is
+very convenient since we usually think of \psnr and \ssr in annualized terms. 
+
+The following rule of thumb may prove useful:
+\begin{quote}
+The number of years required to reject non-zero mean with power of one half is around $2.7 / \psnr^2.$
+\end{quote}
+The mnemonic form of this is ``$e = nz^2$''. 
+Note that Euler's number appears here coincidentally, as it is nearly equal to
+$\wrapBracks{\funcit{\minv{\Phi}}{0.95}}^2$.
+The relative error in this approximation for
+determining the sample size is shown in \figref{power_thing}, as a function of
+\psnr; the error is smaller than one percent in the tested range.  
+
+<<'power_thing',echo=FALSE,fig.cap="The percent error of the power mnemonic $e\\approx\\ssiz \\psnrsq$ is plotted versus \\psnr.">>=
+ope <- 253
+ zetas <- seq(0.1,2.5,length.out=51)
+ssizes <- sapply(zetas,function(zed) { 
+ x <- power.sr_test(n=NULL,zeta=zed,sig.level=0.05,power=0.5,ope=ope)
+ x$n / ope 
+})
+plot(zetas,100 * ((exp(1) / zetas^2) - ssizes)/ssizes, ylab="error in mnemonic rule (as %)")
+@
+
+<<'sobering',include=FALSE>>=
+foo.power <- power.sr_test(n=253,zeta=NULL,sig.level=0.05,power=0.5,ope=253)
+@
+
+The power rules are sobering indeed. Suppose you were a hedge fund manager
+whose investors threatened to perform a one-sided \tstat-test after one year.
+If your strategy's signal-to-noise ratio is less than
+\Sexpr{foo.power$zeta}\yrtomhalf (a value which 
+should be considered ``very good''), 
+your chances of `passing' the \tstat-test are less than fifty percent.
+
+%The presence of 
+
+%Note that when estimating the required sample size, one should always allow for a minimum number of samples 
+%(30 say), as otherwise the power of the test may be adversely affected by non-normality of the returns
+%distribution. This would only be a problem if \psnr was supposed to be very large, or if the mark frequency
+%was very low (say monthly marks).
+
+%Note that the relationship between sample size and SNR indicates that the proper units of 
+%SNR (and Sharpe ratio)
+%is inverse square root time, \eg ``we speculate the annualized SNR of this
+%fund is around $0.8\,\yrtomhalf$,'' or ``the Sharpe ratio of this stock over the past year is
+%$0.4\,\moto{-\halff}$.''
+%%(Reporting Sharpe ratios with units would remove many operational ambiguities.)
+%For this reason, it may be more natural to consider the Sharpe ratio \emph{squared}. 
+
+%UNFOLD
+
+\subsection{Deviations from assumptions}%FOLDUP
+
+Van Belle suggests one consider, in priority order, 
+assumptions of independence,
+heteroskedasticity, and normality in statistical tests. \cite{vanBelle2002_STRUTs} 
+
+\subsubsection{\txtSR and Autocorrelation}%FOLDUP
+
+The simplest relaxation of the \iid assumption of the returns \reti[i] is to assume the time-series of
+returns has a fixed autocorrelation. Let \pacor be the autocorrelation of the series of returns, 
+\ie the population correlation of \reti[i-1] with \reti[i].  \cite{BroDav:2002} In this case the 
+standard error of the mean tends to be an underestimate when $\pacor > 0$ and an overestimate when
+$\pacor < 0$. Van Belle \cite{vanBelle2002_STRUTs} notes that, under this formulation, 
+the \tstat statistic (under the null $\pmu = 0$)
+has standard error of approximately $\sqrt{(1 + \pacor) / (1 - \pacor)}$.  A Monte Carlo study confirms
+this approximation.  In \figref{autocorr_spread} the 
+empirical standard deviation of t-statistics computed on AR(1) series at given values of \pacor
+along with the fit value of $\sqrt{(1 + \pacor) / (1 - \pacor)}$. 
+
+The 'small angle' approximation for this correction is $1 + \pacor$, which is reasonably accurate
+for $\abs{\pacor} < 0.1$. An alternative expression of this approximation is ``a positive autocorrelation
+of \pacor inflates the Sharpe ratio by about \pacor percent.''
+
+% autocorr_study %FOLDUP
+% input{autocorr_study}
+
+<<"autocorr_setup",echo=FALSE>>=
+fname <- system.file('extdata','autocorr_study.rda',package='SharpeR')
+if (fname == "") {
+	fname <- 'autocorr_study.rda'
+}
+# poofs phivals empiricals predicteds ntrials nyr
+load(fname)
+
+# maybe need these some other time?
+# vanilla Sharpe ratio in terms of whatever input units
+f_vsharpe <- function(rets) {
+	return(mean(rets) / sd(rets))
+}
+# annualized Sharpe ratio
+f_asharpe <- function(rets, dpy = 253) {
+	return(sqrt(dpy) * f_vsharpe(rets))
+}
+# the t statistic
+f_tstat <- function(rets) { 
+	return(sqrt(length(rets)) * f_vsharpe(rets))
+}
+@
+
+%spread as a function of autocorrelation %FOLDUP
+<<'autocorr_spread',echo=FALSE,fig.cap=paste("The empirical standard deviation for the \\tstat-statistic is shown at different values of the autocorrelation, \\pacor. Each point represents",ntrials,"series of approximately",nyr,"years of daily data, with each series generated by an AR(1) process with normal innovations.  Each series has actual SNR of zero. The fit line is that suggested by Van Belle's correction for autocorrelation, namely $\\sqrt{(1 + \\pacor) / (1 - \\pacor)}$.")>>=
+plot(phivals,empiricals,pch=1,col="red",
+	ylab="standard deviation of t statistic",
+	xlab="autocorrelation")
+lines(phivals,predicteds,col="black")
+legend("topleft",c("Empirical","Predicted"),
+	lty=c(0,1),pch=c(1,NA_integer_),col=c("red","black"))
+@
+%UNFOLD
+
+%UNFOLD
+
+The corrected \tstat-statistic has the form:
+\begin{equation}
+\tstat[0]' = \sqrt{\frac{1-\sacor}{1 + \sacor}} \sqrt{\ssiz} \frac{\smu - \pmu[0]}{\ssig} = \corcor \sqrt{\ssiz} \ssr[0],
+\label{corr_tstat}
+\end{equation}
+where \corcor is the correction factor for autocorrelation \cite{vanBelle2002_STRUTs}. The equivalent correction
+for Sharpe ratio is $\ssr[0]' = \corcor \ssr[0]$.
+
+%2FIX: mention Lo's approximation
+%2FIX: perform tests and find empirical type I rate. is there a correction?
+%2FIX: this section is weak.
+
+%UNFOLD
+
+\subsubsection{\txtSR and Heteroskedasticity}%FOLDUP
+
+The term `heteroskedasticity' typically applies to situations where
+one is performing inference on the mean effect, and the magnitude
+of error varies in the sample. This idea does not naturally translate
+to performing inference on the SNR, since SNR incorporates volatility,
+and would vary under the traditional definition. Depending
+on the asset, the SNR might increase or decrease with volatility, an
+effect further complicated by the risk-free rate, which is assumed
+to be constant.
+
+Here I will consider the case of asset returns with constant SNR, and
+fluctuating volatility. 
+That is, both the volatility and expected return are changing over 
+time, with their ratio constant. One can imagine this as some `latent'
+return stream which one observes polluted with a varying `leverage'.
+So suppose that \levi[i] and \reti[i] are independent random variables with
+$\levi[i] > 0$. One observes period returns of 
+$\levi[i]\reti[i]$ on period $i$. We have assumed that the SNR of \reti[{}]
+is a constant which we are trying to estimate.
+We have 
+\begin{equation}
+\begin{split}
+\E{\levi\reti} & = \E{\levi}\E{\reti},\\
+\VAR{\levi\reti} & = \E{\levi^2}\E{\reti^2} - \E{\levi}^2\E{\reti}^2 = \E{\reti^2}\VAR{\levi} + \VAR{\reti}\E{\levi}^2,
+\end{split}
+\end{equation}
+And thus, with some rearrangement,
+$$
+\psnr[\levi\reti] = \frac{\psnr[\reti]}{\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}}}.
+$$
+Thus measuring \txtSR without adjusting for heteroskedasticity 
+tends to give underestimates of the `true' \txtSR of the
+returns series, \reti[{}]. However, the deflation is typically modest,
+on the order of 10\%. The shrinkage of \txtSR will also
+typically lead to slight deflation of the estimated standard error,
+but for large \ssiz and daily returns, this will not lead to 
+inflated type I rate. 
+%2FIX: is this true? do a study?
+
+Note that when looking at \eg daily returns, the (non-annualized) \txtSR on the given mark frequency is usually
+on the order of 0.1 or less, thus $\E{\reti}^2 \approx 0.01 \VAR{\reti}$, and so $\E{\reti^2} \approx 1.01 \VAR{\reti}$.
+Thus it suffices to estimate the ratio $\VAR{\levi} / \E{\levi}^2$, the squared
+\emph{coefficient of variation} of \levi, to compute the correction factor.
+
+<<'leverage_foo',include=FALSE>>=
+Elevi <- 1.5 
+Elevis <- Elevi ** 2
+Vlevi <- 1 / 12
+ratlevi <- Vlevi / Elevis
+vixlevi <- (0.4)^2
+@
+
+%Consider, for example, the case where \levi is uniformly distributed between 1.0 and 2.0. In this case, we have
+%$\VAR{\levi} = 1/12$, and $\E{\levi}^2 = 2.25$; their ratio is approximately 
+%$\Sexpr{round(ratlevi,digits=4)}$, and thus, assuming the daily Sharpe is 0.1, we have 
+%$$
+%\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}} \approx 
+%\Sexpr{round(sqrt(1 + (1 + 0.1 ** 2) * ratlevi),digits=2)}.
+%$$
+%In this case the correction factor for leverage is very small indeed. 
+
+Consider, for example, the case where \levi is the \StockTicker{VIX} index.
+Empirically the \StockTicker{VIX} has a coefficient of variation around
+0.4. Assuming the daily \txtSR is 0.1, we have
+$$
+\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}} \approx 
+\Sexpr{round(sqrt(1 + (1 + 0.1 ** 2) * vixlevi),digits=2)}.
+$$
+In this case the correction factor for leverage is fairly small.
+
+%the assumption above is approximately equivalent to $\VAR{\levi}\ll\E{\levi}^2$, which is like saying that the
+%squared SNR of \levi is much greater than one. This is likely to be the case when the leverage is mostly concentrated
+%around \eg a mean value of 1. For example if \levi was uniformly distributed between 1.0 and 2.0, then $\E{\levi}^2 = 2.25$,
+%which is much larger than $\VAR{\levi} = 1/12 \approx 0.083$.
+
+%UNFOLD
+
+\subsubsection{\txtSR and Non-normality}%FOLDUP
+
+The distribution of the Sharpe ratio given in \subsecref{dist_o_SR} is only valid when
+the returns of the fund are normally distributed. If not, the Central Limit Theorem guarantees
+that the sample mean is \emph{asymptotically} normal (assuming the variance exists!), but the convergence
+to a normal can require a large sample size. In practice, the tests described in \subsecref{SR_tests}
+work fairly well for returns from kurtotic distributions, but can be easily fooled by skewed returns.
+
+There should be no real surprise in this statement. Suppose one is analyzing the returns of a hedge fund
+which is secretly writing insurance policies, and has had no claims in the past 5 years.  The true expected
+mean return of the fund might be zero or negative, but the historical data does not contain a `Black Swan'
+type event. \cite{0812979184} We need not make any fabulous conjectures about the `non-stationarity' of our 
+return series, or the failure of models or our ability to predict: skew is a property of the distribution, 
+and we do not have enough evidence to detect the skew.
+
+<<'skewstudy_prelim',echo=FALSE,cache=FALSE>>=
+fname <- system.file('extdata','skew_study.rda',package='SharpeR')
+if (fname == "") {
+	fname <- 'skew_study.rda'
+}
+# poofs res, ntrials, SPX.rets, dpy
+load(fname)
+
+SPX.start <- time(SPX.rets[1])
+SPX.end <- time(SPX.rets[length(SPX.rets)])
+@
+
+To demonstrate this fact, I look at the empirical type I rate for the 
+hypothesis test: $H_0: \psnr = 1.0$
+versus the alternative $H_1: \psnr > 1.0$ for different 
+distributions of returns: 
+I sample from a Gaussian 
+(as the benchmark); a \tstat-distribution with 10 degrees of freedom;
+a Tukey $h$-distribution, with different values of $h$; 
+a `lottery' process which is a shifted, rescaled Bernoulli random
+variable;
+and a `Lambert W x Gaussian' distribution, with 
+different values of the 
+skew parameter. \cite{2010arXiv1010.2265G,2009arXiv0912.4554G,LambertW} 
+I also draw samples from the daily log returns of 
+the S \& P 500 over the period from \Sexpr{as.character(SPX.start,format="%B %d, %Y")} to 
+\Sexpr{as.character(SPX.end,format="%B %d, %Y")}, affinely transformed 
+to have $\psnr = 1.0\yrtomhalf$. I also draw from a symmetrized S \& P 500 returns
+series. 
+
+The \tstat- and Tukey distributions are fairly kurtotic, but have zero
+skew, while the lottery and Lambert W x Gaussian distributions are 
+skewed and (therefore) kurtotic.  
+All distributions have been rescaled to have $\psnr = 1.0\yrtomhalf$; 
+that is,
+I am estimating the empirical type I rate under the null.
+At the nominal $\typeI = 0.05$ level, we expect to get a reject rate 
+around five percent.
+
+I test the empirical type I rate of the test implied by the confidence
+intervals in \eqnref{srci_tinvert}. I also employ Mertens' standard
+errors, \eqnref{srse_mertens}, estimating the skew and kurtosis empirically,
+then comparing to quantiles of the normal distribution. The tests are one-sided
+tests, against the alternative $H_a: \psnr < 1.0\yrtomhalf$.
+
+% input{skew_study}%FOLDUP
+
+<<'skewstudy',echo=FALSE,results='asis',cache=FALSE>>=
+# res, ntrials are poofed above.
+#digits=c(0,0,0,2,2,2),
+xres <- xtable(res,label="tab:sharpe_skew_robustness",
+							 display=c('s','s','s','g','g','fg','fg'),
+							 align="ll|lrr|rr",
+							 caption=paste("Empirical type I rates of the test for $\\psnr = 1.0\\yrtomhalf$ via distribution of the \\txtSR are given for various distributions of returns.  The empirical rates are based on ", 
+														 ntrials, 
+														 " simulations of three years of daily returns, with a nominal rate of $\\typeI = 0.05$. The 'corrected' type I rates refer to a normal approximation using Mertens' correction. Skew appears to have a much more adverse effect than kurtosis alone."))
+print(xres,include.rownames=FALSE,hline.after=c(0,0,2,4,7,10,dim(res)[1]))
+@
+%UNFOLD
+
+The results are given in \tabref{sharpe_skew_robustness}, and indicate that
+skew is a more serious problem than kurtosis. The results from the S \& P 500
+data are fairly encouraging: broad market returns are perhaps not as skewed as
+the Lambert W x Gaussian distributions that we investigate, and the type I rate
+is near nominal when using three years of data. Lumley \etal found similar
+results for the \tstat-test when looking at sample sizes greater than 500.
+\cite{Lumley:2002} Since the \tstat-test statistic is equivalent to \txtSR (up
+to scaling), this result carries over to the test for SNR.
+
+The Mertens' correction appears to be less liberal for the highly skewed
+Lambert distributions, but perhaps more liberal for the Tukey and S \& P 500
+distributions.
+
+%2FIX: more.
+
+However, skew is a serious problem when using the \txtSR. 
+A practicioner must be reasonably satisfied that the
+return stream under examination is not seriously skewed to use the \txtSR. 
+Moreover, one can \emph{not} use historical data to detect skew, for the same
+reason that skew causes the distribution of \txtSR to degrade.
+
+%UNFOLD
+%UNFOLD
+
+%\subsection{A Bayesian view}%FOLDUP
+
+%\providecommand{\bhysnr}[1][0]{\psnr[{#1}]}
+%\providecommand{\bhysnrdof}[1][0]{\ssiz[#1]}
+%\providecommand{\bhyprec}[1][0]{\pprec[{#1}]}
+%\providecommand{\bhyprecdof}[1][0]{\mathSUB{m}{#1}}
+%\providecommand{\prior}[2]{\funcit{f}{\condtwo{#1}{#2}}}
+
+%Let $\reti[1], \reti[2], \ldots, \reti[\ssiz]$ be \iid draws from 
+%a normal distribution \normdist[\pmu,\psig], where \pmu and \psig
+%are unknown. A commonly used conjugate prior is the `Normal-Gamma
+%prior,' which is a prior on \pmu and $\psig^{-2}$, known as the
+%\emph{precision}.  
+
+%Under the Normal-Gamma formulation, one has an unconditional 
+%gamma prior distribution on 
+%$\psig^{-2}$ (this is a chisquare up to scaling), and, conditional
+%on \psig, a normal prior on \pmu. The latter is stated
+%as
+%$$
+%\condtwo{\pmu}{\psig^{-2}} \sim \normlaw{\pmu[0],\psig^2 / \kappa_0},
+%$$
+%where $\pmu[0]$ and $\kappa_0$ are the hyper-parameters.
+%Note this can be simply restated as
+%$$
+%\condtwo{\psnr}{\psig^{-2}} \sim \normlaw{\frac{\pmu[0]}{\psig},1 / \kappa_0}.
+%$$
+%One could rewrite this as a prior on the signal-noise ratio that is
+%independent of \psig.
+
+%It then becomes a mechanical exercise to replace the prior on 
+%\pmu with a prior on \psnr. I perform that exercise here, leaning
+%heavily on Murphy's notes. \cite{murphybayes}
+
+%The prior can be stated as
+%\begin{equation*}
+%\begin{split}
+%\prior{\psnr,\pprec}{\bhysnr,\bhysnrdof,\bhyprec,\bhyprecdof} 
+%&= \normlaw{\condtwo{\psnr}{\bhysnr,\fracc{1}{\bhysnrdof}}} 
+%\gammalaw{\condtwo{\pprec}{\bhyprec/2,2\bhyprecdof}},\\
+%&=
+%\wrapBracks{\sqrt{\frac{\bhysnrdof}{2\pi}}\longexp{-\frac{\bhysnrdof\wrapParens{\psnr
+%- \bhysnr}^2}{2}}} 
+%\wrapBracks{\frac{\pprec^{\bhyprecdof/2 - 1}}{\GAM{\bhyprecdof/2}\wrapParens{2\bhyprec}^{\bhyprecdof/2}} \longexp{-\frac{\pprec}{2\bhyprec}}},\\
+%&= 23
+%\end{split}
+%\end{equation*}
+
+
+%2FIX: keep going.
+
+
+%%UNFOLD
+
+\subsection{Linear attribution models}%FOLDUP
+
+\label{subsec:attribution_models}
+
+The \txtSR and \tstat-test as described previously can be more generally described in terms of 
+linear regression. Namely one models the returns of interest as $\reti[t] = \pregco[0] 1 + \perr[t],$ where 
+\perr[t] are modeled as \iid zero-mean innovations with standard deviation \psig.
+Performing a linear regression, one gets the estimates \sregco[0] and \ssig, and can test the null
+hypothesis $H_0: \fracc{\pregco[0]}{\psig} = 0$ via a \tstat-test.
+To see that this is the case, one only need recognize that the
+sample mean is indeed the least-squares estimator, \ie 
+$\smu = \argmin_{a} \sum_t \wrapParens{a - \reti[t]}^2$.
+
+More generally, we might want to model returns as the linear combination of \nattf factor returns:
+\begin{equation}
+\reti[t] = \pregco[0] 1 + \sum_i^{\nattf - 1} \pregco[i] \retk[i,t] + \perr[t],
+\label{eqn:factormodel}
+\end{equation}
+where $\retk[i,t]$ are the returns of some \kth{i} `factor` at time $t$.  There are numerous candidates
+for the factors, and their choice should depend on the return series being modeled. For example, one
+would choose different factors when modeling the returns of a single company versus those of a broad-market
+mutual fund versus those of a market-neutral hedge fund, \etc.
+Moreover, the choice of factors might depend on the type of analysis being performed. For example, one
+might be trying to `explain away' the returns of one investment as the returns of another investment 
+(presumably one with smaller fees) plus noise. Alternatively, one might be trying to establish that a given
+investment has idiosyncratic `alpha' (\ie \pregco[0]) without significant exposure to other factors.
+
+%Typically factor models are justified by some hypotheses about
+%2FIX
+%\cite{GVK322224764}
+\nocite{GVK322224764}
+
+\subsubsection{Examples of linear attribution models}%FOLDUP
+
+\label{subsec:linreg_models}
+
+\begin{compactitem}
+\item As noted above, the \txtSR implies a trivial factor model, namely
+$\reti[t] = \pregco[0] 1 + \perr[t].$
+This simple model is generally a poor one for describing stock returns;
+one is more likely to see it applied to the returns of mutual funds, hedge funds, \etc
+
+\item The simple model does not take into account the influence of `the market' on the returns of stocks.
+This suggests a factor model equivalent to the Capital Asset Pricing Model (CAPM), namely
+$\reti[t] = \pregco[0] 1 + \pregco[M] \retk[M,t] + \perr[t],$ where \retk[M,t] is the return of `the market`
+at time $t$.  \cite{Black_Jensen_Scholes_1972}
+(Note that the term `CAPM' usually encompasses a number of assumptions used to justify the validity of this 
+model for stock returns.)
+
+This is clearly a superior model for stocks and portfolios with a long bias 
+(\eg typical mutual funds), but might seem inappropriate for a long-short balanced hedge fund, say.  In this
+case, however, the loss of power in including a market term is typically very small, while the possibility of
+reducing type I errors is quite valuable. For example, one might discover that a seemingly long-short balanced
+fund actually has some market exposure, but no significant idiosyncratic returns 
+(one cannot reject $H_0: \pregco[0] = 0$, say); this is valuable information, since a hedge-fund investor might
+balk at paying high fees for a return stream that replicates a (much less expensive) ETF plus noise.
+
+%\cite{Ross_APT_1976} 
+%2FIX: mention APT
+\item Generalizations of the CAPM factor model abound.  For example, the Fama-French 3-factor model 
+(I drop the risk-free rate for simplicity):
+$$\reti[t] = \pregco[0] 1 + \pregco[\smbox{M}] \retk[\smbox{M},t] + \pregco[\smbox{SMB}] \retk[\smbox{SMB},t] + \pregco[\smbox{HML}] \retk[\smbox{HML},t] + \perr[t],$$ 
+where \retk[\smbox{M},t] is the return of `the market`, \retk[\smbox{SMB},t] is the return of `small minus big cap` stocks 
+(the difference in returns of these two groups), and \retk[\smbox{HML},t] is the return of `high minus low book value` 
+stocks.  \cite{Fama_French_1992}
+Carhart adds a momentum factor:
+$$\reti[t] = \pregco[0] 1 + \pregco[\smbox{M}] \retk[\smbox{M},t] + \pregco[\smbox{SMB}] \retk[\smbox{SMB},t] + \pregco[\smbox{HML}] \retk[\smbox{HML},t] + \pregco[\smbox{UMD}] \retk[\smbox{UMD},t] + \perr[t],$$ 
+where \retk[\smbox{UMD},t] is the return of `ups minus downs`, \ie the returns of the previous period winners minus the
+returns of previous period losers.  \cite{Carhart_1997}
+
+\item Henriksson and Merton describe a technique for detecting market-timing ability in a portfolio.
+One can cast this model as 
+$$
+\reti[t] = \pregco[0] 1 
++ \pregco[\smbox{M}] \retk[\smbox{M},t]
++ \pregco[\smbox{HM}] \pospart{\wrapParens{- \retk[\smbox{M},t]}} + \perr[t],$$ 
+where \retk[\smbox{M},t] are the returns of `the market' the 
+portfolio is putatively timing, and $\pospart{x}$ is the positive
+part of $x$. \cite{Henriksson_Merton_1981}
+Actually, one or several factor timing terms can be added to any factor model.
+Note that unlike the factor returns in models discussed above, one expects
+$\pospart{\wrapParens{-\retk[\smbox{M}]}}$ to have 
+significantly non-zero mean. This will cause some decrease in power when testing \pregco[0] for significance. Also note
+that while Henriksson and Merton intend this model as a positive test for \pregco[\smbox{HM}], one could treat the timing
+component as a factor which one seeks to ignore entirely, or downweight its importance. 
+%2FIX: is this really the H-M model?
+
+\item Often the linear factor model is used with a `benchmark' 
+(mutual fund, index, ETF, \etc) used as the factor returns. In this case, the process generating \reti[t] may or may
+not be posited to have zero exposure to the benchmark, but usually one is testing for significant idiosyncratic term.
+
+\item Any of the above models can be augmented by splitting the idiosyncratic term into a constant term and some
+time-based term. For example, it is often argued that a certain strategy `worked in the past' but does no longer. 
+This implies a splitting of the constant term as
+$$\reti[t] = \pregco[0] 1 + \pregco[0]' \retk[0,t] + \sum_i \pregco[i] \retk[i,t] + \perr[t],$$
+where $\retk[0,t] = (\ssiz - t)/\ssiz$, given \ssiz observations. In this case the idiosyncratic part is an affine
+function of time, and one can test for \pregco[0] independently of the time-based trend 
+(one can also test whether $\pregco[0]' > 0$ to see if the `alpha' is truly decaying).
+One can also imagine time-based factors which attempt to address seasonality or `regimes'.
+
+\end{compactitem}
+
+%UNFOLD
+
+\subsubsection{Tests involving the linear attribution model}%FOLDUP
+
+Given \ssiz observations of the
+returns and the factors, let \vreti be the vector of returns and let \mretk be the $\ssiz \times \nattf$ 
+matrix consisting of the returns of the \nattf factors and a column of all ones.
+The ordinary least squares estimator for the regression coefficients is expressed by the 
+'normal equations':
+$$\sregvec = \minv{\left(\gram{\mretk}\right)}\tr{\mretk}\vreti.$$
+The estimated variance of the error term is
+$\ssig^2 = \gram{\left(\vreti - \mretk\sregvec\right)} / (\ssiz - \nattf)$.
+
+%2FIX: take care with the DOF: $\ssiz - \nattf - 1$ or $\ssiz - \nattf - 2$?
+
+\label{subsec:linreg_tests}
+
+\begin{compactenum}
+\item The classical \tstat-test for regression coefficients tests the null hypothesis:
+$$H_0 : \tr{\pregco}\convec = \contar\quad\mbox{versus}\quad H_1 : \tr{\pregco}\convec > \contar,$$
+for some conformable vector \convec and constant \contar. To perform this test, we construct the
+regression \tstat-statistic
+\begin{equation}
+\tstat = \frac{\tr{\sregco}\convec - \contar}{\ssig \sqrt{\qiform{\wrapParens{\gram{\mretk}}}{\convec}}}.
+\end{equation}
+This statistic should be distributed as a non-central \tstat-distribution with non-centrality parameter
+$$
+\nctp = \frac{\tr{\pregco}\convec - \contar}{\psig \sqrt{\qiform{\wrapParens{\gram{\mretk}}}{\convec}}},
+$$
+and $\ssiz - \nattf$ degrees of freedom. Thus we reject the null if \tstat is greater than 
+\tqnt{1-\typeI}{\ssiz - \nattf}, the $1-\typeI$ quantile of the (central) 
+\tstat-distribution with $\ssiz - \nattf$ degrees of freedom.
+
+\item To test the null hypothesis:
+$$H_0 : \tr{\pregco}\convec = \psig\contar\quad\mbox{versus}\quad H_1 : \tr{\pregco}\convec > \psig\contar,$$
+for given \convec and \contar, one constructs the \tstat-statistic
+\begin{equation}
+\tstat = \frac{\tr{\sregco}\convec}{\ssig \sqrt{\qiform{\wrapParens{\gram{\mretk}}}{\convec}}}.
+\end{equation}
+This statistic should be distributed as a non-central \tstat-distribution with non-centrality parameter
+$$
+\nctp = \frac{\contar}{\sqrt{\qiform{\wrapParens{\gram{\mretk}}}{\convec}}},
+$$
+and $\ssiz - \nattf$ degrees of freedom. Thus we reject the null if \tstat is greater than 
+\nctqnt{1-\typeI}{\ssiz - \nattf}{\nctp}, the $1-\typeI$ quantile of the non-central 
+\tstat-distribution with $\ssiz - \nattf$ degrees of freedom and non-centrality parameter \nctp.
+
+Note that the statistic $\sregco[0] / \ssig$ is the equivalent to the \txtSR in the general
+factor model (and $\pregco[0] / \psig$ is the population analogue).
+
+
+2FIX: 2 sample test for SNR of independent groups?
+\end{compactenum}
+
+%UNFOLD
+
+\subsubsection{Deviations from the model}%FOLDUP
+
+The advantage of viewing Sharpe ratio as a least squares regression problem 
+(or of using the more general factor model for attribution), is that 
+regression is a well-studied problem. Indeed, numerous books and articles have 
+been written about the topic and how to test for, and deal with, deviations from the 
+model: autocorrelation, heteroskedasticity, non-normality, outliers, \etc  
+\cite{rao2010linear,Kutner2004Applied,BDReg1993,kennedy2008guide}
+
+%Here I outline only a few results and refer the interested reader to the literature.
+
+%\subsubsection{Autocorrelation}
+
+%\subsubsection{Heteroskedasticity}
+
+%The tests outlined in \subsecref{linreg_tests} technically require that the error terms, \perr[t]
+%have the same variance, \psig. When this condition is violated, the OLS estimator \sregco is 
+%\emph{not} biased. However, it is not the best linear unbiased estimator (\cf the Gauss Markov theorem),
+%and the OLS estimator of \psig is biased, leading to possibly incorrect inference. 
+
+
+%UNFOLD
+
+
+%UNFOLD
 %UNFOLD
 
 \section{\txtSR and portfolio optimization}%FOLDUP
 
+% intro%FOLDUP
 Let $\vreti[1],\vreti[2],\ldots,\vreti[\ssiz]$ be independent draws from
 a \nstrat-variate normal with population mean \pvmu and population covariance
 \pvsig. Let \svmu be the usual sample estimate of the mean,
@@ -442,13 +1272,13 @@ where the constant $c$ is chosen to maximize return under the given risk
 budget:
 $$
 c =
-\frac{\Rbuj}{\sqrt{\qform{\minv{\svsig}}{\svmu}}}.
+\frac{\Rbuj}{\sqrt{\qiform{\svsig}{\svmu}}}.
 $$
 The \txtSR of this portfolio is
 \begin{equation}
 \ssropt
 \defeq \frac{\trAB{\sportwopt}{\svmu} - \rfr}{\sqrt{\qform{\svsig}{\sportwopt}}}
- = \sqrt{\qform{\minv{\svsig}}{\svmu}}
+ = \sqrt{\qiform{\svsig}{\svmu}}
 - \rdrag.
 \end{equation}
 The term $\rdrag$ is deterministic; we can treat it as an annoying
@@ -456,13 +1286,13 @@ additive constant that has to be minded. Define the population analogue of
 this quantity as
 \begin{equation}
 \psnropt 
-\defeq \sqrt{\qform{\minv{\pvsig}}{\pvmu}}
+\defeq \sqrt{\qiform{\pvsig}{\pvmu}}
 - \rdrag.
 \end{equation}
 
 
 The random term,
-$\ssiz \wrapParens{\qform{\minv{\svsig}}{\svmu}}^2$,
+$\ssiz \wrapParens{\qiform{\svsig}{\svmu}}^2$,
 is a Hotelling \Tstat, which follows a non-central \flaw{} distribution, up to
 scaling:
 \begin{equation*}
@@ -484,9 +1314,106 @@ $$
 the above expression can be simplified slightly as 
 \begin{equation*}
 \frac{\ssiz-\nstrat}{\nstrat}
-\qform{\minv{\usvsig}}{\svmu} \sim
+\qiform{\usvsig}{\svmu} \sim
 \ncflaw{\nstrat,\ssiz-\nstrat,\ssiz\wrapParens{\psnropt + \rdrag}^2}.
 \end{equation*}
+%UNFOLD
+
+\subsection{Tests involving Hotelling's Statistic}%FOLDUP
+
+\label{subsec:HT_tests}
+
+Here I list the classical multivariate analogues to the tests described 
+in \subsecref{SR_tests}:
+\begin{compactenum}
+%%1sample test for mean%FOLDUP
+\item The classical one-sample test for mean of a multivariate random variable uses Hotelling's statistic, just as
+the univariate test uses the \tstat-statistic. Unlike the univariate case, we cannot perform a one-sided test 
+(because $\nlatf > 1$ makes one-sidedness an odd concept), and thus we have the two-sided test:
+$$H_0 : \pvmu = \pvmu[0]\quad\mbox{versus}\quad H_1 : \pvmu \ne \pvmu[0],$$
+we reject at the \typeI level if 
+$$\Tstat[0] = \ssiz \qform{\svsig^{-1}}{\left(\svmu - \pvmu[0]\right)} \ge 
+\frac{\nlatf(\ssiz - 1)}{\ssiz - \nlatf} \fqnt{1-\typeI}{\nlatf,\ssiz - \nlatf},
+$$
+where \fqnt{1-\typeI}{\nlatf,\ssiz - \nlatf} is the $1 - \typeI$ quantile of the 
+(central) \flaw{}-distribution with $\nlatf$ and $\ssiz - \nlatf$ degrees of freedom.
+
+If $\pvmu = \pvmu[1] \ne \pvmu[0]$, then the power of this test is
+$$\powr = 1 - \ncfcdf{\fqnt{1-\typeI}{\nlatf,\ssiz - \nlatf}}{\nlatf,\ssiz - \nlatf}{\ncfp[1]},$$
+where 
+$$\ncfp[1] = \ssiz\qiform{\pvsig}{\wrapNeParens{\pvmu[1] - \pvmu[0]}}$$
+is the noncentrality parameter, and 
+$\ncfcdf{x}{\nlatf,\ssiz - \nlatf}{\ncfp}$ is 
+the cumulative distribution function of the non-central \flaw{}-distribution with non-centrality parameter
+\ncfp and $\nlatf,\ssiz-\nlatf$ degrees of freedom.  \cite{Bilodeau1999}
+
+Note that the non-centrality parameter is equal to the population analogue of the Hotelling statistic
+itself. One should take care that some references (and perhaps statistical packages) have different
+ideas about how the non-centrality parameter should be communicated. The above formulation matches the
+convention used in the R statistical package and in Matlab's statistics toolbox. It is, however, off by 
+a factor of two with respect to the convention used by Bilodeau and Brenner. \cite{Bilodeau1999}
+%UNFOLD
+
+%%1sample test for SNR%FOLDUP
+\item A one-sample test for optimal signal-to-noise ratio (SNR) involves the Hotelling statistic as follows.
+To test
+$$H_0 : \psnr[*] = \psnr[0]\quad\mbox{versus}\quad H_1 : \psnr[*] > \psnr[0],$$
+we reject if 
+$$\Tstat[0] > \frac{\nlatf(\ssiz-1)}{\ssiz - \nlatf}\ncfqnt{1-\typeI}{\nlatf,\ssiz-\nlatf}{\ncfp[0]},$$
+where \Tstat[0] and \ncfp[0] are defined as above, and where
+\ncfqnt{1-\typeI}{\nlatf,\ssiz-\nlatf}{\ncfp[0]} is the 
+$1 - \typeI$ quantile of the non-central \flaw{}-distribution with non-centrality parameter \ncfp[0] and \nlatf and
+$\ssiz - \nlatf$ degrees of freedom.
+
+If $\psnr[*] > \psnr[0]$, then the power of this test is
+$$\powr = 1 - \ncfcdf{\ncfqnt{1-\typeI}{\nlatf,\ssiz-\nlatf}{\ncfp[0]}}{\nlatf,\ssiz-\nlatf}{\ncfp[*]},$$
+where $\ncfp[*] = \ssiz\psnr[*]^2,$ is the noncentrality parameter, and 
+$\ncfcdf{x}{\nlatf,\ssiz - \nlatf}{\ncfp}$ is the
+the cumulative distribution function of the non-central \flaw{}-distribution with non-centrality parameter
+\ncfp and $\nlatf,\ssiz-\nlatf$ degrees of freedom.  
+
+%UNFOLD
+\end{compactenum}
+%UNFOLD
+
+\subsubsection{Power and Sample Size}%FOLDUP
+
+In \subsecref{SR_power_and_ssize} I outlined the relationship of sample size and effect size 
+for the one-sample t-test, or equivalently, the one-sample test for SNR. Here I extend those results
+to the Hotelling test for zero optimal population SNR, \ie the null $\psnr[0] = 0$. As noted in 
+\subsecref{HT_tests}, the power of this test is 
+$\powr = 1 - \ncfcdf{\ncfqnt{1-\typeI}{\nlatf,\ssiz-\nlatf}{0}}{\nlatf,\ssiz-\nlatf}{\ncfp[*]}.$
+
+This equation implicitly defines a sample size, \ssiz given $\typeI, \typeII, \nlatf$ and \ncfp[*]. As it
+happens, for fixed values of \typeI, \typeII and \nlatf, the sample size relationship is similar to
+that found for the \tstat-test:
+$$\ssiz \approx \frac{c}{\psnr[*]^2},$$
+where the constant $c$ depends on \typeI, \typeII and \nlatf.  For $\typeI = 0.05$, an approximate value of
+the numerator $c$ is given in \tabref{htestpower} for a few different values of the power. 
+Note that for $\nlatf = 1$, we should recover the same sample-size relationship as shown in 
+\tabref{ttestpower} for the two-sided test. This is simply because Hotelling's statistic for $p=1$ is 
+Student's \tstat-statistic squared (and thus side information is lost).
+
+% input{hotelling_ssize}%FOLDUP
+
+%FOLDUP
+
+<<hot_ssiz_table,echo=FALSE,results='asis'>>=
+fname <- system.file('extdata','hotelling_power_rule.rda',package='SharpeR')
+if (fname == "") {
+	fname <- 'hotelling_power_rule.rda'
+}
+# poofs res, ntrials, SPX.rets, dpy
+load(fname)
+xres <- xtable(hot.power,label="tab:htestpower",
+	caption="The numerator in the sample size relationship required to achieve a fixed power in Hotelling's test is shown. The type I rate is 0.05.")
+print(xres,include.rownames=TRUE,sanitize.text.function=function(x){x})
+@
+
+%UNFOLD
+
+%UNFOLD
+%UNFOLD
 
 \subsection{Asymptotics and Confidence Intervals}%FOLDUP
 
@@ -560,8 +1487,8 @@ stdv <- sqrt((1 / ex_n) * (ex_snr_d ** 4 + 2 * ex_snr_d ** 2 + c) / (2 * cplus *
 %stdv <- sqrt(1 / n) * sqrt(1 + (c / (2 * cplus)) + (cplus / (2 * (1 - c))))
 
 Consider as an example, the case where $\nlatf = \Sexpr{ex_p}$, $\ssiz = \Sexpr{ex_n}\,\mbox{days},$ and 
-$\psnropt = \Sexpr{ex_snr}\,\mbox{years}^{-0.5}$.  Assuming \Sexpr{dpy} days per year, the expected value 
-of \ssr[*] is approximately $\Sexpr{round(sqrt(dpy) * meanv,2)}\,\mbox{years}^{-0.5}$, with standard
+$\psnropt = \Sexpr{ex_snr}\,\yrtomhalf$.  Assuming \Sexpr{dpy} days per year, the expected value 
+of \ssr[*] is approximately $\Sexpr{round(sqrt(dpy) * meanv,2)}\,\yrtomhalf$, with standard
 error around \Sexpr{round(sqrt(dpy) * stdv,2)}. This is a very serious bias. The problem is that the
 `aspect ratio,' $\arat = \nlatf / \ssiz$, is quite
 a bit larger than $\psnrsqopt$, and so it dominates the expectation. 
@@ -582,12 +1509,13 @@ A better way to find confidence intervals is implicitly, by solving
 \begin{equation}
 \begin{split}
 1 - \typeI/2 &= \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf
-(\ssiz - 1)}}\ssrsqopt}{\ssiz\psnr[l]^2,\nlatf,\ssiz - \nlatf},\\
-\typeI/2 &= \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz - 1)}}\ssrsqopt}{\ssiz\psnr[u]^2,\nlatf,\ssiz - \nlatf},
+(\ssiz - 1)}}\ssrsqopt}{\nlatf,\ssiz - \nlatf}{\ssiz\psnr[l]^2},\\
+\typeI/2 &= \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz -
+1)}}\ssrsqopt}{\nlatf,\ssiz - \nlatf}{\ssiz\psnr[u]^2},
 \end{split}
 \label{eqn:optsnrcis_I}
 \end{equation}
-where $\ncfcdf{x}{\ncfp,\nlatf,\ssiz-\nlatf}$ is the CDF of the non-central
+where $\ncfcdf{x}{\nlatf,\ssiz-\nlatf}{\ncfp}$ is the CDF of the non-central
 \flaw{}-distribution with 
 non-centrality parameter \ncfp and \nlatf and $\ssiz - \nlatf$ degrees of freedom.
 This method requires computational inversion of the CDF function. Also, there may not be \psnr[l] or \psnr[u] such that
@@ -595,12 +1523,13 @@ the above hold with equality, so one is forced to use the limiting forms:
 
 \begin{equation}
 \begin{split}
-\psnr[l] &= \min \setwo{z}{z \ge 0,\,\,1 - \typeI/2 \ge \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz - 1)}}\ssrsqopt}{\ssiz z^2,\nlatf,\ssiz - \nlatf}},\\
-\psnr[u] &= \min \setwo{z}{z \ge 0,\,\,\typeI/2 \ge \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz - 1)}}\ssrsqopt}{\ssiz z^2,\nlatf,\ssiz - \nlatf}}.
+\psnr[l] &= \min \setwo{z}{z \ge 0,\,\,1 - \typeI/2 \ge \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz - 1)}}\ssrsqopt}{\nlatf,\ssiz - \nlatf}{\ssiz z^2}},\\
+\psnr[u] &= \min \setwo{z}{z \ge 0,\,\,\typeI/2 \ge \ncfcdf{\wrapNeParens{\frac{\ssiz (\ssiz-\nlatf)}{\nlatf (\ssiz - 1)}}\ssrsqopt}{\nlatf,\ssiz - \nlatf}{\ssiz z^2}}.
 \end{split}
 \label{eqn:optsnrcis_II}
 \end{equation}
-Since \ncfcdf{\cdot}{\ssiz z^2,\nlatf,\ssiz - \nlatf} is a decreasing function of $z^2$, and approaches zero in the limit, 
+Since \ncfcdf{\cdot}{\nlatf,\ssiz - \nlatf}{\ssiz z^2} is a 
+decreasing function of $z^2$, and approaches zero in the limit, 
 the above confidence intervals are well defined.
 
 %% input{hotelling_ci_study}%FOLDUP
@@ -677,7 +1606,7 @@ greater than one, the MLE of the non-centrality parameter is equal to zero.
 The equivalent fact about the optimal \txtSR is that if
 $\ssrsqopt \le \frac{\arat}{1 - \arat}$,
 then the MLE of \psnropt is zero, where, again, 
-$\arat = \nlatf / \ssiz$ is the `aspect ratio.'
+$\arat = \fracc{\nlatf}{\ssiz}$ is the `aspect ratio.'
 
 Using the expectation of the non-central \flaw{} distribution, we can find an unbiased estimator of \psnrsqopt. It is given
 by $(1-\arat)\ssrsqopt - \arat$.  While this is unbiased for \psnrsqopt, there is no guarantee that it is positive!
@@ -722,13 +1651,13 @@ where the constant $c$ is chosen to maximize return under the given risk
 budget, as in the unconstrained case.
 %$$
 %c =
-%\frac{\Rbuj}{\sqrt{\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\wrapParens{\hejG\svmu}}}}.
+%\frac{\Rbuj}{\sqrt{\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\wrapParens{\hejG\svmu}}}}.
 %$$
 The \txtSR of this portfolio is
 \begin{equation}
 \ssroptG{\hejG} 
 \defeq \frac{\trAB{\sportwoptG{\hejG}}{\svmu} - \rfr}{\sqrt{\qform{\svsig}{\sportwoptG{\hejG}}}}
- = \sqrt{\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\wrapParens{\hejG\svmu}}}
+ = \sqrt{\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\wrapParens{\hejG\svmu}}}
 - \frac{\rfr}{\Rbuj}.
 \end{equation}
 Again, for purposes of estimating the population analogue, we can largely
@@ -776,11 +1705,11 @@ is
 \begin{equation}
 	\begin{split}
 	\sportwopt &= c\wrapParens{\minv{\svsig}{\svmu} -
-	\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\hejG}\svmu} +
+	\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\hejG}\svmu} +
 	\tr{\hejG}{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}\hejg,\,\\
 	c^2 &= \frac{\Rbuj^2 - \qform{\wrapParens{\qoform{\svsig}{\hejG}}}{\hejg}}{
-	\qform{\minv{\svsig}}{\svmu} -
-	\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\wrapParens{\hejG\svmu}}},
+	\qiform{\svsig}{\svmu} -
+	\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\wrapParens{\hejG\svmu}}},
 	\end{split}
 \end{equation}
 where the numerator in the last equation need be positive for the problem
@@ -794,7 +1723,7 @@ portfolio is
 \begin{equation*}
 \sportwopt 
 = c \wrapParens{\minv{\svsig}{\svmu} -
-	\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\hejG}\svmu}
+	\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\hejG}\svmu}
 = c_1 \sportwoptG{\eye} - c_2 \sportwoptG{\hejG},
 \end{equation*}
 using the notation from \subsecref{basic_conpo}.
@@ -809,8 +1738,8 @@ changes in the leading constant to satisfy the risk budget).
 The squared \txtSR of the optimal portfolio is
 \begin{equation}
 \ssrsqopt 
-= \qform{\minv{\svsig}}{\svmu} -
-	\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\wrapParens{\hejG\svmu}}
+= \qiform{\svsig}{\svmu} -
+	\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\wrapParens{\hejG\svmu}}
 = \ssrsqoptG{\eye} - \ssrsqoptG{\hejG},
 \label{eqn:ssr_Gcons}
 \end{equation}
@@ -845,7 +1774,7 @@ of the \nstrathej rows of the identity matrix corresponding to the
 \nstrathej assets to be tested for spanning, then the term
 $$
 \ssrsqoptG{\hejG} = 
-\qform{\minv{\wrapParens{\qoform{\svsig}{\hejG}}}}{\wrapParens{\hejG\svmu}}
+\qiform{\wrapParens{\qoform{\svsig}{\hejG}}}{\wrapParens{\hejG\svmu}}
 $$
 is the squared \txtSR of the optimal portfolio on only the \nstrathej spanning
 assets. A spanning test is then a test of
@@ -1015,11 +1944,586 @@ opt.pos.T2 <- function(mu1,mu2,sig1,sig12,sig2) {
 %UNFOLD
 %UNFOLD
 
+\section{Multivariate inference in unified form}%FOLDUP
 
+Here I describe a way to think about multivariate 
+distributions that eliminates, to some degree, the 
+distinction between mean and covariance, in order to simplify
+calculations and exposition. The basic idea is to prepend a 
+deterministic 1 to the random vector, then perform
+inference on the \emph{uncentered} second moment matrix.
+
+Let \avreti be the \nlatf-variate vector \vreti prepended with a 1:
+$\avreti = \asvec{1,\tr{\vreti}}$. Consider the second
+moment of \avreti:
+\begin{equation}
+\pvsm \defeq \E{\ogram{\avreti}} = 
+	\twobytwo{1}{\tr{\pvmu}}{\pvmu}{\pvsig + \ogram{\pvmu}}.
+\label{eqn:pvsm_def}
+\end{equation}
+By inspection one can confirm that the
+inverse of \pvsm is
+$$
+\minv{\pvsm} 
+= \twobytwo{1 + \qiform{\pvsig}{\pvmu}}{-\tr{\pvmu}\minv{\pvsig}}{-\minv{\pvsig}\pvmu}{\minv{\pvsig}}
+= \twobytwo{1 + \psnrsqopt}{-\tr{\pportwopt}}{-\pportwopt}{\minv{\pvsig}}.
+$$
+The (upper) Cholesky factor of \pvsm is
+\begin{equation*}
+\chol{\pvsm} = \twobytwo{1}{\tr{\pvmu}}{0}{\chol{\pvsig}}.
+\end{equation*}
+
+In some situations, the Cholesky factor of \minv{\pvsm} might be 
+of interest.  In this situation, one can \emph{append} a 1 to
+\vreti instead of prepending it. When \pvsm is defined in this
+way, the Cholesky factor of \minv{\pvsm} (but not that of \pvsm) 
+has a nice form:
+\begin{equation}
+\gram{\twobytwo{\ichol{\pvsig}}{-\ichol{\pvsig}\pvmu}{0}{1}} =
+\twobytwo{\minv{\pvsig}}{-\pportwopt}{-\tr{\pportwopt}}{1 + \psnrsqopt},
+\label{eqn:ichol_pvsm_nb}
+\end{equation}
+where the latter is \minv{\pvsm} when defined by appending a 1.
+
+The relationships above are merely facts of linear algebra, and so
+hold for the sample estimates as well:
+\begin{equation*}
+\minv{\twobytwo{1 + \ssrsqopt}{-\tr{\sportwopt}}{-\sportwopt}{\minv{\svsig}}}
+= \twobytwo{1}{\tr{\svmu}}{\svmu}{\svsig + \ogram{\svmu}}
+= \gram{\twobytwo{1}{\tr{\svmu}}{0}{\chol{\svsig}}}.
+\end{equation*}
+
+Given \ssiz \iid observations of \vreti, let \amreti be the matrix
+whose rows are the vectors \tr{\avreti[i]}. The na\"{i}ve sample estimator
+\begin{equation}
+\svsm \defeq \oneby{\ssiz}\gram{\amreti}
+\end{equation}
+is an unbiased estimator since $\pvsm = \E{\gram{\avreti}}$.
+
+\subsection{Asymptotic distribution of the Markowitz portfolio}%FOLDUP
+
+\label{subsec:dist_markoport}
+\nocite{BrittenJones1999}
+
+Collecting the mean and covariance into the second moment matrix as
+we have done gives the asymptotic distribution of the sample Markowitz
+portfolio without much work. This computation
+generalizes the `standard' asymptotic analysis of Sharpe ratio of
+multiple assets, as in \subsecref{asymptotic_sr}.
+
+Let \fvec{\Mtx{A}}, and \fvech{\Mtx{A}} be the vector and half-space
+vector operators.  The former turns an $\nlatf\times\nlatf$ matrix into
+an $\nlatf^2$ vector of its columns stacked on top of each other; the 
+latter vectorizes a symmetric (or lower triangular) matrix into a vector
+of the non-redundant elements. \cite{magnus1980elimination} 
+
+Define, as we have above, \svsm to be the unbiased sample estimate
+of \pvsm, based on \ssiz \iid samples of \avreti.
+Under the multivariate central limit theorem \cite{wasserman2004all}
+\begin{equation}
+\sqrt{\ssiz}\wrapParens{\fvech{\svsm} - \fvech{\pvsm}} 
+\rightsquigarrow 
+\normlaw{0,\pvvar},
+\label{eqn:mvclt_svsm}
+\end{equation}
+where \pvvar is the variance of \fvech{\svsm}, which, in general, 
+is unknown. For the case where \vreti is multivariate Gaussian,
+\pvvar is known; see \subsecref{gaussian_fisher_inf}.
+
+The Markowitz portfolio appears in $-\minv{\svsm}$. Let \Elim
+be the `Elimination Matrix,' a matrix of zeros and ones with the
+property that $\fvech{\Mtx{A}} = \Elim\fvec{\Mtx{A}}.$  
+\cite{magnus1980elimination} We can find the asymptotic distribution
+of $\minv{\svsm}$ via the delta method. The derivative of the matrix
+inverse is given by
+\begin{equation}
+\dbyd{\fvec{\minv{\Mtx{A}}}}{\fvec{\Mtx{A}}} 
+= - \AkronA{\minv{\Mtx{A}}},
+\label{eqn:deriv_matrix_inverse}
+\end{equation}
+for symmetric \Mtx{A}.  \cite{magnus1980elimination,facklernotes}
+We can reduce this to the non-redundant parts via the Elimination matrix:
+\begin{equation}
+\dbyd{\fvech{\minv{\Mtx{A}}}}{\fvech{\Mtx{A}}} 
+= \qoform{\dbyd{\fvec{\minv{\Mtx{A}}}}{\fvec{\Mtx{A}}}}{\Elim}
+= - \qoform{\wrapParens{\AkronA{\minv{\Mtx{A}}}}}{\Elim}.
+\label{eqn:deriv_vech_matrix_inverse}
+\end{equation}
+
+Then we have, via the delta method, 
+%\begin{equation}
+\begin{multline}
+\sqrt{\ssiz}\wrapParens{\fvech{\minv{\svsm}} - \fvech{\minv{\pvsm}}} 
+\rightsquigarrow \\
+\normlaw{0,\qform{\pvvar}{\wrapBracks{\qoform{\wrapParens{\AkronA{\minv{\pvsm}}}}{\Elim}}}}.
+\label{eqn:mvclt_isvsm}
+\end{multline}
+%\end{equation}
+To estimate the covariance of $\fvech{\minv{\svsm}} - \fvech{\minv{\pvsm}}$,
+plug in \svsm for \pvsm in the covariance computation, and use some
+consistent estimator for \pvvar, call 
+it \svvar. 
+%Rather, one must estimate $\qform{\pvvar}{\Elim}$.
+The simple sample estimate can be had by computing the sample covariance
+of the vectors $\fvech{\ogram{\avreti[i]}} =
+\asvec{1,\tr{\vreti[i]},\tr{\fvech{\ogram{\vreti[i]}}}}$. 
+More elaborate covariance estimators can be used, for example, to deal with
+violations of the \iid assumptions.
+
+\nocite{magnus1999matrix,magnus1980elimination}
+\nocite{BrittenJones1999}
+
+Empirically, the marginal Wald test for zero weighting in the 
+Markowitz portfolio based on this approximation are nearly
+identical to the \tstat-statistics produced by the procedure
+of Britten-Jones, as shown below. \cite{BrittenJones1999} 
+
+<<'me_vs_bjones',echo=TRUE>>=
+nday <- 1024
+nstk <- 5
+
+# under the null: all returns are zero mean;
+set.seed(as.integer(charToRaw("7fbb2a84-aa4c-4977-8301-539e48355a35")))
+rets <- matrix(rnorm(nday * nstk),nrow=nday)
+
+# t-stat via Britten-Jones procedure
+bjones.ts <- function(rets) {
+	ones.vec <- matrix(1,nrow=dim(rets)[1],ncol=1)
+	bjones.mod <- lm(ones.vec ~ rets - 1)
+	bjones.sum <- summary(bjones.mod)
+	retval <- bjones.sum$coefficients[,3]
+}
+# wald stat via inverse second moment trick
+ism.ws <- function(rets) {
+# flipping the sign on returns is idiomatic,
+	asymv <- ism_vcov(- rets)
+	asymv.mu <- asymv$mu[1:asymv$p]
+	asymv.Sg <- asymv$Ohat[1:asymv$p,1:asymv$p]
+	retval <- asymv.mu / sqrt(diag(asymv.Sg))
+}
+
+bjones.tstat <- bjones.ts(rets)
+ism.wald <- ism.ws(rets)
+
+# compare them:
+print(bjones.tstat)
+print(ism.wald)
+
+# repeat under the alternative;
+set.seed(as.integer(charToRaw("a5f17b28-436b-4d01-a883-85b3e5b7c218")))
+zero.rets <- t(matrix(rnorm(nday * nstk),nrow=nday))
+mu.vals <- (1/sqrt(253)) * seq(-1,1,length.out=nstk) 
+rets <- t(zero.rets + mu.vals)
+
+bjones.tstat <- bjones.ts(rets)
+ism.wald <- ism.ws(rets)
+
+# compare them:
+print(bjones.tstat)
+print(ism.wald)
+@
+
+%UNFOLD
+
+\subsection{Unified Multivariate Gaussian}%FOLDUP
+
+Note that
+$$
+\qiform{\pvsig}{\wrapParens{\vreti - \pvmu}} = 
+\qiform{\pvsm}{\avreti} - 1.
+$$
+Using the block determinant formula, we find that \pvsm has the same 
+determinant as \pvsig, that is $\det{\pvsm} = \det{\pvsig}.$  These
+relationships hold without assuming a particular distribution for 
+\vreti. 
+
+Assume, now, that \vreti is multivariate Gaussian. 
+Then the density of \vreti can be expressed more simply as
+\begin{equation*}
+\begin{split}
+\normpdf{\vreti}{\pvmu,\pvsig} &= \frac{1}{\sqrt{\wrapParens{2\pi}^{\nlatf}\det{\pvsig}}} 
+\longexp{-\half \qiform{\pvsig}{\wrapParens{\vreti - \pvmu}}},\\
+ &= \frac{\wrapParens{\det{\pvsig}}^{-\half}}{\wrapParens{2\pi}^{\nlatf/2}}
+\longexp{-\half \wrapParens{\qiform{\pvsm}{\avreti} - 1}},\\
+ &= \wrapParens{2\pi}^{-\nlatf/2} \wrapParens{\det{\pvsm}}^{-\half}
+\longexp{-\half \wrapParens{\qiform{\pvsm}{\avreti} - 1}},\\
+ &= \wrapParens{2\pi}^{-\nlatf/2}
+\longexp{\half - \half \logdet{\pvsm} - \half \trace{\minv{\pvsm}\ogram{\avreti}}},\\
+\therefore - \log\normpdf{\vreti}{\pvmu,\pvsig} &= 
+  c_{\nlatf} 
++ \half \logdet{\pvsm} 
++ \half \trace{\minv{\pvsm}\ogram{\avreti}},
+\end{split}
+\end{equation*}
+for the constant 
+$c_{\nlatf} = \exp{\half}-\half[\nlatf]\log\wrapParens{2\pi}.$
+
+Given \ssiz \iid observations of \vreti, let \amreti be the matrix
+whose rows are the vectors \tr{\vreti[i]}. Then the negative log
+density of \amreti is
+\begin{equation*}
+- \log\normpdf{\amreti}{\pvsm} =
+  \ssiz c_{\nlatf} 
++ \half[\ssiz] \logdet{\pvsm} 
++ \half \trace{\minv{\pvsm}\gram{\amreti}}.
+\end{equation*}
+Again let $\svsm = \gram{\amreti}/\ssiz$, the unbiased
+sample estimate of \pvsm. Then 
+\begin{equation*}
+\frac{- 2\log\normpdf{\amreti}{\pvsm}}{\ssiz} = 
+  c_{\nlatf} 
++ \logdet{\pvsm} 
++ \trace{\minv{\pvsm}\svsm}.
+\end{equation*}
+
+By Lemma (5.1.1) of Press \cite{press2012applied}, this can be expressed
+as a density on \svsm, which is a sufficient statistic:
+\begin{equation*}
+\begin{split}
+\frac{- 2\log\FOOpdf{}{\svsm}{\pvsm}}{\ssiz} 
+&= \frac{- 2\log\normpdf{\amreti}{\pvsm}}{\ssiz}
+	-\frac{2}{\ssiz}\wrapParens{\half[\ssiz-\nlatf-2]\logdet{\svsm}}\\
+&\phantom{=}\,
+	-\frac{2}{\ssiz}\wrapParens{\half[\nlatf+1]\wrapParens{\ssiz - \half[\nlatf]} \log\pi -
+	\sum_{j=1}^{\nlatf+1} \log\funcit{\Gamma}{\half[\ssiz +1-j]}},\\
+&= c_{\nlatf} - \frac{\nlatf+1}{\ssiz}\wrapParens{\ssiz - \half[\nlatf]} \log\pi 
+	- \frac{2}{\ssiz} \sum_{j=1}^{\nlatf+1}
+	\log\funcit{\Gamma}{\half[\ssiz +1-j]}\\
+&\phantom{=}\,
+	+ \logdet{\pvsm} - \frac{\ssiz-\nlatf-2}{\ssiz}\logdet{\svsm}
+	+ \trace{\minv{\pvsm}\svsm},\\
+&= c'_{\ssiz,\nlatf} 
+	+ \logdet{\pvsm} - \frac{\ssiz-\nlatf-2}{\ssiz}\logdet{\svsm}
+	+ \trace{\minv{\pvsm}\svsm},\\
+&= c'_{\ssiz,\nlatf} 
+	- \logdet{\minv{\pvsm}} - \frac{\ssiz-\nlatf-2}{\ssiz}\logdet{\svsm}
+	+ \trace{\minv{\pvsm}\svsm}.
+\end{split}
+\end{equation*}
+
+The density of \svsm is thus
+\begin{equation}
+\FOOpdf{}{\svsm}{\pvsm} =
+c''_{\ssiz,\nlatf}\frac{\det{\svsm}^{\half[\ssiz-\nlatf-2]}}{\det{\pvsm}^{\half[\ssiz]}}
+\longexp{-\half[\ssiz]\trace{\minv{\pvsm}\svsm}}.
+\end{equation}
+Thus $\ssiz\svsm$ has the same density, up to the leading constant, as a 
+$\nlatf+1$-dimensional Wishart random variable with \ssiz degrees of freedom
+and scale matrix \pvsm. In fact, $\ssiz\svsm$ is a \emph{conditional} Wishart,
+conditional on $\svsm_{1,1} = 1$.
+%conditional on $\svsm_{\nlatf+1,\nlatf+1} = 1$.  % for the other form.
+%UNFOLD
+
+\subsection{Maximum Likelihood Estimator}%FOLDUP
+
+%The maximum likelihood estimator of \ichol{\pvsm} is found by 
+%taking the derivative of the (log) likelihood and finding a root.
+%That is,
+%\begin{equation*}
+%\begin{split}
+%0 &= \drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\ichol{\pvsm}},\\
+  %&= -2 \trminv{\wrapParens{\ichol{\pvsm[m]}}} + \ichol{\pvsm[m]}2\svsm,
+%\end{split}
+%\end{equation*}
+%leaning heavily on the Matrix Cookbook for 
+%the derivatives. \cite{petersen2006matrix}
+%This is solved by $\ichol{\pvsm[m]} = \ichol{\svsm}$, and thus the
+%na\"{i}ve sample estimate is the MLE.
+\providecommand{\txtMLE}{\mbox{MLE}}
+
+The maximum likelihood estimator of \pvsm is found by 
+taking the derivative of the (log) likelihood with respect to
+\pvsm and finding a root. However, the derivative of log likelihood
+with respect to \pvsm is mildly unpleasant:
+\begin{equation}
+\begin{split}
+\drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\pvsm} 
+	&= - \half[\ssiz]\drbydr{\logdet{\pvsm}}{\pvsm} 
+	- \half[\ssiz]\drbydr{\trace{\minv{\pvsm}\svsm}}{\pvsm},\\
+	&= - \half[\ssiz]\minv{\pvsm}
+	+ \half[\ssiz]\minv{\pvsm}\svsm\minv{\pvsm},
+\end{split}
+\label{eqn:mle_deadend}
+\end{equation}
+However, the derivative with respect to \minv{\pvsm} is a bit
+simpler:
+\begin{equation}
+\begin{split}
+\drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}} 
+	&= \half[\ssiz]\drbydr{\logdet{\minv{\pvsm}}}{\minv{\pvsm}} 
+	- \half[\ssiz]\drbydr{\trace{\minv{\pvsm}\svsm}}{\minv{\pvsm}},\\
+  &= \half[\ssiz]\wrapParens{\pvsm - \svsm}.
+\end{split}
+\end{equation}
+(See Magnus and Neudecker or the Matrix Cookbook for a refresher
+on matrix derivatives. \cite{magnus1999matrix,petersen2006matrix})
+Thus the likelihood is maximized by 
+$\pvsm[\txtMLE] = \svsm$, \ie the unbiased sample estimator is also
+the MLE. Note that this is also a root of \eqnref{mle_deadend}.
+
+Since $\pvsm[\txtMLE] = \svsm$, the log likelihood of the MLE is 
+\begin{equation}
+\begin{split}
+\log\FOOlik{}{\svsm}{\pvsm[\txtMLE]} 
+ &= - \half[\ssiz] c'_{\ssiz,\nlatf} - \half[\ssiz] \logdet{\pvsm[\txtMLE]} +
+ \half[\ssiz-\nlatf-2]\logdet{\svsm}\\
+&\phantom{=}\,+ \trace{\minv{\pvsm[\txtMLE]}\svsm},\\
+ &= -\half[\ssiz] c'_{\ssiz,\nlatf} 
+ - \half[\nlatf+2]\logdet{\svsm} + \wrapParens{\nlatf+1}.
+\end{split}
+\end{equation}
+
+\subsubsection{Fisher Information}
+
+\label{subsec:gaussian_fisher_inf}
+
+\providecommand{\FishI}[1][{}]{\mathSUB{\mathcal{I}}{#1}}
+\providecommand{\FishIf}[2][{}]{\funcit{\mathSUB{\mathcal{I}}{#1}}{#2}}
+\providecommand{\qfElim}[1]{\qform{#1}{\Elim}}
+\providecommand{\qoElim}[1]{\qoform{#1}{\Elim}}
+\providecommand{\qoElim}[1]{\qoform{#1}{\Elim}}
+
+To compute the Fisher Information, first compute
+the Hessian of $\log\FOOpdf{}{\svsm}{\pvsm}$ with
+respect to $\fvech{\minv{\pvsm}}$. From above we know that
+\begin{equation*}
+\drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}}
+ = \half[\ssiz]\wrapParens{\pvsm - \svsm}.
+\end{equation*}
+So
+\begin{equation*}
+\begin{split}
+\drbydr[2]{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}}
+ & \defeq
+\drbydr{\fvech{\drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}}}}{\fvech{\minv{\pvsm}}},\\
+ &= - \half[\ssiz] \qoElim{\wrapParens{\AkronA{\pvsm}}},
+\end{split}
+\end{equation*}
+via \eqnref{deriv_vech_matrix_inverse}, where, again, \Elim is the 
+`Elimination Matrix.' \cite{magnus1980elimination}
+
+Thus 
+\begin{equation}
+\FishIf[\ssiz]{\minv{\pvsm}} = \half[\ssiz]
+\qoElim{\wrapParens{\AkronA{\pvsm}}}.
+\end{equation}
+By change of variables, and again using \eqnref{deriv_vech_matrix_inverse}, 
+the Fisher Information with respect to \pvsm is
+\begin{equation}
+\FishIf[\ssiz]{\pvsm} = \half[\ssiz]
+\qform{\wrapParens{\qoElim{\wrapParens{\AkronA{\pvsm}}}}}{\wrapBracks{\qoElim{\wrapParens{\AkronA{\minv{\pvsm}}}}}}.
+\end{equation}
+
+Under `the appropriate regularity conditions,' \cite{wasserman2004all}
+\begin{equation}
+\label{eqn:converge_theta}
+\begin{split}
+\wrapParens{\fvech{\minv{\svsm}} - \fvech{\minv{\pvsm}}} 
+& \rightsquigarrow 
+\normlaw{0,\minv{\wrapParens{\FishIf[\ssiz]{\minv{\pvsm}}}}},\\
+\wrapParens{\fvech{\svsm} - \fvech{\pvsm}} 
+& \rightsquigarrow 
+\normlaw{0,\minv{\wrapParens{\FishIf[\ssiz]{{\pvsm}}}}}.
+\end{split}
+\end{equation}
+Thus for the case of multivariate Gaussian returns, the term \pvvar
+from \eqnref{mvclt_svsm} is identified as
+\begin{equation}
+\begin{split}
+\label{eqn:pvvar_identity}
+\pvvar &= \ssiz\minv{\wrapParens{\FishIf[\ssiz]{{\pvsm}}}},\\
+ &= 2
+\minv{\wrapParens{\qform{\wrapParens{\qoElim{\wrapParens{\AkronA{\pvsm}}}}}{\wrapBracks{\qoElim{\wrapParens{\AkronA{\minv{\pvsm}}}}}}}}.
+\end{split}
+\end{equation}
+
+%UNFOLD
+
+\subsection{Likelihood Ratio Test}%FOLDUP
+
+Suppose that $\pvsm[0]$ is the maximum likelihood estimate of \pvsm under
+some null hypothesis under consideration. The likelihood ratio test
+statistic is 
+\begin{equation}
+\begin{split}
+-2\log\Lambda &\defeq
+-2\log\wrapParens{\frac{\FOOlik{}{\svsm}{\pvsm[0]}}{\FOOlik{}{\svsm}{\pvsm[\txtMLE]}}},\\
+&= \ssiz\wrapParens{\logdet{\pvsm[0]\minv{\pvsm[\txtMLE]}} + 
+\trace{\wrapBracks{\minv{\pvsm[0]} - \minv{\pvsm[\txtMLE]}}\svsm}},\\
+&= \ssiz\wrapParens{\logdet{\pvsm[0]\minv{\svsm}} + 
+\trace{\minv{\pvsm[0]}\svsm} - \wrapBracks{\nlatf + 1}}.
+\end{split}
+\label{eqn:wilks_lambda_def}
+\end{equation}
+
+\providecommand{\lrtA}[1][i]{\mathSUB{\Mtx{A}}{#1}}
+\providecommand{\lrta}[1][i]{\mathSUB{a}{#1}}
+
+
+\subsubsection{Tests on the Precision and Markowitz Portfolio}%FOLDUP
+
+%This section is based on Dempster's ``Covariance Selection''. \cite{dempster1972}
+
+
+For some conformable symmetric matrices \lrtA, and given scalars \lrta, 
+consider the null hypothesis
+\begin{equation}
+H_0: \trace{\lrtA[i]\minv{\pvsm}} = \lrta[i],\,i=1,\ldots,m.
+\label{eqn:lrt_null_back}
+\end{equation}
+The constraints have to be sensible. 
+For example, they cannot
+violate the positive definiteness of 
+\minv{\pvsm}, \etc Without loss of generality, we can assume
+that the \lrtA[i] are symmetric, since \pvsm is symmetric, and for
+symmetric \Mtx{G} and square \Mtx{H}, 
+$\trace{\Mtx{G}\Mtx{H}} = \trace{\Mtx{G}\half\wrapParens{\Mtx{H} +
+\tr{\Mtx{H}}}}$, and so we could replace any non-symmetric \lrtA[i] with
+$\half\wrapParens{\lrtA[i] + \tr{\lrtA[i]}}$.
+
+Employing the Lagrange multiplier technique, the maximum likelihood
+estimator under the null hypothesis satisfies
+\begin{equation*}
+\begin{split}
+0 &= \drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}}
+- \sum_i \lambda_i
+%\drbydr{\trace{\lrtA[i]\minv{\pvsm}}}{\ichol{\pvsm}},\\
+\drbydr{\trace{\lrtA[i]\minv{\pvsm}}}{\minv{\pvsm}},\\
+&= - \pvsm + \svsm - \sum_i \lambda_i \lrtA[i],\\
+\therefore \pvsm[\txtMLE] &= \svsm - \sum_i \lambda_i \lrtA[i].
+\end{split}
+\end{equation*}
+The maximum likelihood estimator under the constraints has to be
+found numerically by solving for the $\lambda_i$, subject
+to the constraints in \eqnref{lrt_null_back}.
+
+This framework slightly generalizes Dempster's 
+``Covariance Selection.'' \cite{dempster1972} Covariance selection
+reduces to the case where each \lrta[i] is zero, and
+each \lrtA[i] is a matrix of all zeros except two (symmetric) ones 
+somewhere in the upper left $\nlatf \times \nlatf$ sub matrix. In
+all other respects, however, the solution here follows Dempster.
+
+\providecommand{\vitrlam}[2]{\vectUL{\lambda}{\wrapNeParens{#1}}{#2}}
+\providecommand{\sitrlam}[2]{\mathUL{\lambda}{\wrapNeParens{#1}}{#2}}
+\providecommand{\vitrerr}[2]{\vectUL{\epsilon}{\wrapNeParens{#1}}{#2}}
+\providecommand{\sitrerr}[2]{\mathUL{\epsilon}{\wrapNeParens{#1}}{#2}}
+
+An iterative technique for finding the MLE based on a Newton step would
+proceed as follows. Let \vitrlam{0}{} be some initial estimate of the
+vector of $\lambda_i$. (A good initial estimate can likely be had 
+by abusing the asymptotic normality 
+result from \subsecref{dist_markoport}.)
+The residual of the \kth{k} estimate, \vitrlam{k}{} is
+\begin{equation}
+\vitrerr{k}{i} \defeq 
+\trace{\lrtA[i]\minv{\wrapBracks{\svsm - \sum_j \sitrlam{k}{j} \lrtA[j]}}} - \lrta[i].
+\end{equation}
+The Jacobian of this residual with respect to the \kth{l} element of \vitrlam{k}
+is
+\begin{equation}
+\drbydr{\vitrerr{k}{i}}{\sitrlam{k}{l}} = 
+\trace{\lrtA[i]\minv{\wrapBracks{\svsm - \sum_j \sitrlam{k}{j} \lrtA[j]}}
+\lrtA[l] \minv{\wrapBracks{\svsm - \sum_j \sitrlam{k}{j} \lrtA[j]}}}.
+\end{equation}
+
+Newton's method is then the iterative scheme
+\begin{equation}
+\vitrlam{k+1}{} \leftarrow \vitrlam{k}{} -
+\minv{\wrapParens{\drbydr{\vitrerr{k}{}}{\vitrlam{k}{}}}} \vitrerr{k}.
+\end{equation}
+When (if?) the iterative scheme converges on the optimum, one can 
+compute the likelihood ratio statistic $-2\log\Lambda$, as defined
+in \eqnref{wilks_lambda_def}. By Wilks' Theorem, under the null 
+hypothesis, $-2\log\Lambda$ is, asymptotically in \ssiz, distributed as 
+a chi-square with $m$ degrees of freedom. \cite{wilkstheorem1938}
+%UNFOLD
+
+%\subsubsection{Tests on the Mean and Covariance Matrix}%FOLDUP
+
+%For some conformable symmetric matrices \lrtA, and given scalars \lrta, 
+%consider the null hypothesis
+%\begin{equation}
+%H_0: \trace{\lrtA[i]{\pvsm}} = \lrta[i],\,i=1,\ldots,m.
+%\label{eqn:lrt_null_forw}
+%\end{equation}
+%The constraints have to be sensible. For example, they cannot
+%violate the positive definiteness of 
+%\pvsm, \etc  Without loss of generality, we can assume
+%that the \lrtA[i] are symmetric, since \pvsm is symmetric, and for
+%symmetric \Mtx{G} and square \Mtx{H}, 
+%$\trace{\Mtx{G}\Mtx{H}} = \trace{\Mtx{G}\half\wrapParens{\Mtx{H} +
+%\tr{\Mtx{H}}}}$, and so we could replace any non-symmetric \lrtA[i] with
+%$\half\wrapParens{\lrtA[i] + \tr{\lrtA[i]}}$.
+
+%Employing the Lagrange multiplier technique, the maximum likelihood
+%estimator under the null hypothesis satisfies
+%\begin{equation*}
+%\begin{split}
+%0 &= \drbydr{\log\FOOpdf{}{\svsm}{\pvsm}}{\minv{\pvsm}}
+%- \sum_i \lambda_i
+%%\drbydr{\trace{\lrtA[i]\minv{\pvsm}}}{\ichol{\pvsm}},\\
+%\drbydr{\trace{\lrtA[i]{\pvsm}}}{\minv{\pvsm}},\\
+%&= - \pvsm + \svsm + \sum_i \lambda_i \pvsm \lrtA[i] \pvsm,\\
+%\therefore \pvsm[\txtMLE] &= ???.
+%\end{split}
+%\end{equation*}
+%The maximum likelihood estimator under the constraints has to be
+%found numerically by solving for the $\lambda_i$, subject
+%to the constraints in \eqnref{lrt_null_back}.
+
+
+%%UNFOLD
+%UNFOLD
+
+%\subsection{Bayesian View}%FOLDUP
+
+%\providecommand{\bhyvprec}[1][0]{\mathSUB{\Mtx{\Lambda}}{#1}}
+%\providecommand{\bhyprecdof}[1][0]{\mathSUB{m}{#1}}
+
+%A commonly used conjugate prior for the multivariate Gaussian
+%distribution is the ``Normal-Wishart'' prior, which is a Wishart
+%prior on \minv{\pvsig}, and, conditional on knowing \pvsig, a 
+%Normal prior on \pvmu. \cite{murphybayes}
+
+%The natural translation of the Normal-Wishart prior to the appended
+%form considered here is a (conditional) Wishart prior on the
+%inverse second moment, \minv{\pvsm}.  Note that the form of
+%\minv{\pvsm} is constrained by the definition of the appended Gaussian.
+%Teasing out the dependence is tricky. 
+
+%A simpler approach is to fix the prior on the Cholesky factor of
+%\minv{\pvsm}. As noted in \eqnref{ichol_pvsm_nb}, \ichol{\pvsm} has
+%a simple structure. Moreover, we can abuse the Bartlett decomposition
+%of a Wishart to compute densities.  \cite{anderson2003introduction}
+%Let \bhyvprec and \bhyprecdof be the Bayesian hyper-parameters for the
+%`precision' and degrees of freedom. The prior distribution is 
+%\ichol{\pvsm} is equal to $T\chol{\bhyvprec}$, where $T$ is an upper
+%triangular matrix satisfying
+%\begin{compactenum}
+%\item $T_{ii} = 1$ for $i = \nlatf + 1$,
+%\item $T_{ii}^2 \sim \chisqlaw{\bhyprecdof - i + 1}$ for $i \le \nlatf$,
+%\item $T_{ij} \sim \normlaw{0,1}$ for $i < j$,
+%\item the $T_{ij}$ are independently distributed.
+%\end{compactenum}
+%Together, these imply that \ogram{T} takes a Wishart distribution
+%with identity scale matrix and \bhyprecdof degrees of freedom, 
+%conditional on $T_{\nlatf+1,\nlatf+1} = 1$.
+
+%Thus the prior is 
+%\begin{equation*}
+%\prior{\ichol{\pvsm}}{\chol{\bhyvprec},\bhyprecdof} \propto 
+%\frac{\prod_{i=1}^{\nlatf} \wrapParens{\ichol{\pvsm}}_{ii}^{\bhyprecdof - i} 
+%\longexp{-\half
+%\trace{\minv{\bhyvprec}\pvsm}}}{\det{\bhyvprec}^{\half[\ssiz]}}.
+%\end{equation*}
+%2FIX: is this exactly so? problems within the trace? not obviously so.
+%%UNFOLD
+%UNFOLD
 
 \section{Miscellanea}%FOLDUP
 
-\subsection{Which Returns?}%FOLDUP
+\subsection{Which returns?}%FOLDUP
 
 There is often some confusion regarding the form of returns (\ie log returns or `relative' returns)
 to be used in computation of the \txtSR.  Usually log returns are recommended because they aggregate
@@ -1045,68 +2549,20 @@ where \ssr[r] is the Sharpe measured using relative returns and \ssr uses log re
 is most accurate for daily returns, and for the modest values of \txtSR one expects to see for real funds.
 %UNFOLD
 
-\subsection{Sharpe is nearly leverage invariant}%FOLDUP
+\subsection{Sharpe tricks}%FOLDUP
 
-Suppose that you observe the returns of a strategy, but the fund manager is changing the leverage
-from period to period. Suppose the fund manager's decisions are 
-completely uninformed\sidenote{I know this is a stretch...},
-and so that changes in leverage are completely independent from the future performance of the underlying 
-strategy. Can one compute the \txtSR on the observed returns without adjusting for leverage 
-(which may be unknown)?
+\subsubsection{\txtSR bounds probability of a loss}
 
-Given some modest conditions, one can indeed. Let \levi[i] be the leverage on period $i$, and let 
-$\levi[i]\reti[i]$ be the observed levered returns\sidenote{Here one must use 
-relative returns instead of log returns.}. 
-Suppose that \levi[i] and \reti[i] are independent random variables and $\levi[i] > 0$.
-We have 
-\begin{equation}
-\begin{split}
-\E{\levi\reti} & = \E{\levi}\E{\reti},\\
-\VAR{\levi\reti} & = \E{\levi^2}\E{\reti^2} - \E{\levi}^2\E{\reti}^2 = \E{\reti^2}\VAR{\levi} + \VAR{\reti}\E{\levi}^2,
-\end{split}
-\end{equation}
-And thus, with some rearrangement,
+Suppose the SNR of a return series is positive. Then,
+by Cantelli's inequality:
 $$
-\psnr[\levi\reti] = \frac{\psnr[\reti]}{\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}}}.
+\Pr{\reti < 0} = \Pr{{\pmu - \reti} > \pmu} = 
+ \Pr{{\pmu - \reti} > \psnr \psig} \le \frac{1}{1 + \psnr^2}.
 $$
-Thus measuring \txtSR without adjusting for leverage tends to give underestimates of the `true' \txtSR of the
-returns series. However, the deflation is probably very modest indeed.
+This is a \emph{very} loose upper bound on the probability of a loss, and is fairly useless on any timescale
+for which the SNR is less than one.
 
-Note that when looking at \eg daily returns, the (non-annualized) \txtSR on the given mark frequency is usually
-on the order of 0.1 or less, thus $\E{\reti}^2 \approx 0.01 \VAR{\reti}$, and so $\E{\reti^2} \approx 1.01 \VAR{\reti}$.
-Thus it suffices to estimate the ratio $\VAR{\levi} / \E{\levi}^2$, the squared
-\emph{coefficient of variation} of \levi, to compute the correction factor.
-
-<<'leverage_foo',include=FALSE>>=
-Elevi <- 1.5 
-Elevis <- Elevi ** 2
-Vlevi <- 1 / 12
-ratlevi <- Vlevi / Elevis
-vixlevi <- (0.4)^2
-@
-
-%Consider, for example, the case where \levi is uniformly distributed between 1.0 and 2.0. In this case, we have
-%$\VAR{\levi} = 1/12$, and $\E{\levi}^2 = 2.25$; their ratio is approximately 
-%$\Sexpr{round(ratlevi,digits=4)}$, and thus, assuming the daily Sharpe is 0.1, we have 
-%$$
-%\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}} \approx 
-%\Sexpr{round(sqrt(1 + (1 + 0.1 ** 2) * ratlevi),digits=2)}.
-%$$
-%In this case the correction factor for leverage is very small indeed. 
-
-Consider, for example, the case where \levi is the \StockTicker{VIX} index.
-Empirically the \StockTicker{VIX} has a coefficient of variation around
-0.4. Assuming the daily \txtSR is 0.1, we have
-$$
-\sqrt{1 + \frac{\E{\reti^2}}{\VAR{\reti}}\frac{\VAR{\levi}}{\E{\levi}^2}} \approx 
-\Sexpr{round(sqrt(1 + (1 + 0.1 ** 2) * vixlevi),digits=2)}.
-$$
-In this case the correction factor for leverage is fairly small.
-
-%the assumption above is approximately equivalent to $\VAR{\levi}\ll\E{\levi}^2$, which is like saying that the
-%squared SNR of \levi is much greater than one. This is likely to be the case when the leverage is mostly concentrated
-%around \eg a mean value of 1. For example if \levi was uniformly distributed between 1.0 and 2.0, then $\E{\levi}^2 = 2.25$,
-%which is much larger than $\VAR{\levi} = 1/12 \approx 0.083$.
+%\subsubsection{\txtSR and drawdowns}
 
 %UNFOLD
 
@@ -1247,7 +2703,7 @@ med.snr.true <- zeta.s * (1 - medv.true)
 I check the quality of the approximation given in \eqnref{hcut_apx} by a Q-Q 
 plot in \figref{haircutting}.  For the case where
 $\ssiz=\Sexpr{n.obs}$ (\Sexpr{n.yr} years of daily observations), 
-$\nlatf=\Sexpr{n.stok}$ and $\psnropt=\Sexpr{zeta.s * sqrt(ope)}\yrto{-1/2}$, 
+$\nlatf=\Sexpr{n.stok}$ and $\psnropt=\Sexpr{zeta.s * sqrt(ope)}\yrtomhalf$, 
 the t-approximation is very good indeed. 
 %Note that computing prediction
 %intervals for this unobserved, random quantity using this equation is not
@@ -1271,11 +2727,11 @@ the t-approximation is very good indeed.
 %Continuing, 
 %In this case, where we optimize over \Sexpr{n.stok} assets given \Sexpr{n.yr} 
 %years of daily observations, and a population SNR of 
-%\Sexpr{zeta.s * sqrt(ope)} \yrto{-1/2}, 
+%\Sexpr{zeta.s * sqrt(ope)} \yrtomhalf, 
 The median value of the haircut is on the 
 order of \Sexpr{signif(100 * medv.true,2)}\%, meaning that the median
 population SNR of the sample portfolios is around \Sexpr{med.snr.true *
-sqrt(ope)}\yrto{-1/2}.  The maximum value of the haircut over the
+sqrt(ope)}\yrtomhalf.  The maximum value of the haircut over the
 \Sexpr{n.sim} simulations, however is \Sexpr{max(hcuts)}, which is larger than
 one; this happens if and only if the sample portfolio has negative expected
 return: $\trAB{\sportwopt}{\pvmu} < 0$. In this case the Markowitz portfolio
@@ -1292,7 +2748,7 @@ parameters \pvmu and \pvsig, but does not make use of the observed quantities
 producing prediction intervals on \hcut when planning a trading strategy 
 (\ie balancing \ssiz and \nlatf). A more practical problem is that of 
 estimating confidence intervals on 
-$\trAB{\sportw}{\pvmu} / \sqrt{\qform{\minv{\pvsig}}{\sportw}}$ having 
+$\trAB{\sportw}{\pvmu} / \sqrt{\qiform{\pvsig}{\sportw}}$ having 
 observed \svmu and \svsig. In this case one \emph{cannot} simply 
 plug-in some estimate of \psnropt computed from \ssropt (via MLE, KRS, \etc)
 into \eqnref{hcut_apx}. The reason is that the error in the approximation of
@@ -1303,18 +2759,83 @@ into \eqnref{hcut_apx}. The reason is that the error in the approximation of
 
 % bibliography%FOLDUP
 \nocite{CambridgeJournals:4493808,lo2002,Lecoutre2007,Johnson:1940,Ledoit2008850,sref2011}
+\nocite{rekkas2012inference}
+\nocite{geary1936distribution}
+\nocite{doi:10.1080/13518470802423478,SJOS:SJOS729}
+\nocite{okhrin2006distributional,okhrin2008estimation,schmidzabo2008}
 
 %\bibliographystyle{jss}
 %\bibliographystyle{siam}
 %\bibliographystyle{ieeetr}
 \bibliographystyle{plainnat}
 %\bibliographystyle{acm}
-\bibliography{SharpeR}
+\bibliography{SharpeR,rauto}
 %UNFOLD
 
-\appendix
+\appendix%FOLDUP
 
-\section{Asymptotic Efficiency of Sharpe Ratio}%FOLDUP
+\section{Glossary}%FOLDUP
+
+\begin{description}
+\item[\pmu] The true, or population, mean return of a single asset.
+\item[\psig] The population standard deviation of a single asset.
+\item[\psnr] The population signal-to-noise ratio (SNR), defined as
+$\psnr \defeq \fracc{\pmu}{\psig}$.
+
+\item[\smu] The unbiased sample mean return of a single asset.
+\item[\ssig] The sample standard deviation of returns of a single asset.
+\item[\ssr] The sample \txtSR, defined as
+$\ssr \defeq \fracc{\smu}{\ssig}$.
+
+\item[{\ssiz}] Typically the sample size, the number of observations
+of the return of an asset or collection of assets.
+
+\item[\rfr] The risk-free, or disastrous rate of return.
+
+\item[\nlatf] Typically the number of assets in the multiple asset case.
+\item[\pvmu] The population mean return vector of \nlatf assets.
+\item[\pvsig] The population covariance matrix of \nlatf assets.
+
+\item[\pportwopt] The maximal SNR portfolio, constructed using population
+data: $\pportwopt\defeq\minv{\pvsig}\pvmu.$
+\item[\psnropt] The SNR of \pportwopt.
+
+\item[\svmu] The Sample mean return vector of \nlatf assets.
+\item[\svsig] The sample covariance matrix of \nlatf assets.
+
+\item[\sportw] A portfolio, built on sample data.
+\item[\sportwopt] The maximal \txtSR portfolio, constructed using 
+sample data: $\sportwopt\defeq\minv{\svsig}\svmu.$
+\item[\ssropt] The \txtSR of \sportwopt.
+
+
+\item[\nctcdf{x}{\df[1]}{\nctp}] the CDF of the non-central 
+\tlaw{} distribution, with \df[1] degrees of freedom and
+non-centrality parameter \nctp, evaluated at $x$.
+\item[\nctqnt{q}{\df[1]}{\nctp}] the inverse CDF, or $q$-quantile
+of the non-central 
+\tlaw{} distribution, with \df[1] degrees of freedom and
+non-centrality parameter \nctp.
+
+\item[\fcdf{x}{\df[1],\df[2]}] the CDF of the 
+\flaw{} distribution, with degrees of freedom \df[1] and \df[2],
+evaluated at $x$.
+\item[\ncfcdf{x}{\df[1],\df[2]}{\ncfp}] the CDF of the non-central
+\flaw{} distribution, with degrees of freedom \df[1] and \df[2]
+and non-centrality parameter \ncfp, evaluated at $x$.
+\item[\ncfqnt{q}{\df[1],\df[2]}{\ncfp}] the inverse CDF, or $q$-quantile
+of the non-central
+\flaw{} distribution, with degrees of freedom \df[1] and \df[2]
+and non-centrality parameter \ncfp.
+\item[{\pcmom[3]}] the skew of a random variable.
+\item[{\pcmom[4]}] the excess kurtosis of a random variable.
+
+\item[{\pmom[i]}] the \kth{i} uncentered moment of a random variable.
+\item[{\smom[i]}] the \kth{i} uncentered sample moment of a sample.
+\end{description}
+%UNFOLD
+
+\section{Asymptotic efficiency of sharpe ratio}%FOLDUP
 
 \label{sec:sr_efficiency}
 
@@ -1369,7 +2890,7 @@ $\tr{\wrapNeBracks{\susr, \ssig^2}}$ is asymptotically \emph{efficient}, \ie it 
 asymptotically.
 %UNFOLD
 
-\section{Some Moments}%FOLDUP
+\section{Some moments}%FOLDUP
 
 \label{sec:some_moments}
 
@@ -1406,31 +2927,28 @@ we have the following moments:
 	\E{\ssrsqopt} 
  & = \frac{\ssiz-1}{\ssiz}\frac{\wrapNeParens{\nlatf + \ssiz\psnrsqopt}}{\ssiz-\nlatf-2}
 	= \wrapNeParens{1 - \oneby{\ssiz}} \frac{\wrapNeParens{\arat + \psnrsqopt}}{1 - \arat - \frac{2}{\ssiz}},\\
-	\VAR{\ssrsqopt} & = \wrapNeParens{\frac{\ssiz-1}{\ssiz}}^2 \frac{2}{(\ssiz -
+ \VAR{\ssrsqopt} & = \wrapNeParens{\frac{\ssiz-1}{\ssiz}}^2 \frac{2}{(\ssiz -
 \nlatf - 2)(\ssiz - \nlatf - 4)}\wrapNeParens{\frac{(\ssiz\psnrsqopt +
 \nlatf)^2}{\ssiz - \nlatf - 2} + 2 \ssiz\psnrsqopt + \nlatf},\\
-	& = \wrapNeParens{1 - \oneby{\ssiz}}^2 \oneby{\ssiz}\frac{2}{(1 - \arat -
+ & = \wrapNeParens{1 - \oneby{\ssiz}}^2 \oneby{\ssiz}\frac{2}{(1 - \arat -
 \frac{2}{\ssiz})(1 - \arat - \frac{4}{\ssiz})}\wrapNeParens{\frac{(\psnrsqopt +
 \arat)^2}{1 - \arat - \frac{2}{\ssiz}} + 2 \psnrsqopt + \arat},
 \end{split}
-\label{eqn:Tstatmoms}
+\label{eqn:TstatmomsII}
 \end{equation}
 where $\arat = \fracc{\nlatf}{\ssiz}$ is the aspect ratio, and \psnrsqopt is the maximal SNR achievable
-on a basket of the assets: $\psnrsqopt = \qform{\minv{\pvsig}}{\pvmu}$.
+on a basket of the assets: $\psnrsqopt = \qiform{\pvsig}{\pvmu}$.
 
 
-%The distribution of Hotelling's statistic is known \cite{Bilodeau1999} for 
-%general \pvmu and \pvsig, and can be expressed in terms of a noncentral
-%\flaw{}-distribution:
-%$$\frac{\ssiz - \nlatf}{\nlatf (\ssiz - 1)} \Tstat = \frac{\ssiz (\ssiz - \nlatf)}{\nlatf (\ssiz - 1)} \ssr[*]^2 \sim F\left(\ncfp,\nlatf,\ssiz - \nlatf\right),$$
-%where the distribution has \nlatf and $\ssiz - \nlatf$ degrees of freedom, and 
-%$$\ncfp = \ssiz \qform{\pvsig^{-1}}{\pvmu} = \ssiz\psnr[*]^2$$
-%is the non-centrality parameter, and \psnr[*] is the population optimal SNR.
+The distribution of Hotelling's statistic is known \cite{Bilodeau1999} for 
+general \pvmu and \pvsig, and can be expressed in terms of a noncentral
+\flaw{}-distribution:
+$$\frac{\ssiz - \nlatf}{\nlatf (\ssiz - 1)} \Tstat = \frac{\ssiz (\ssiz - \nlatf)}{\nlatf (\ssiz - 1)} \ssr[*]^2 \sim F\left(\ncfp,\nlatf,\ssiz - \nlatf\right),$$
+where the distribution has \nlatf and $\ssiz - \nlatf$ degrees of freedom, and 
+$$\ncfp = \ssiz \qform{\pvsig^{-1}}{\pvmu} = \ssiz\psnr[*]^2$$
+is the non-centrality parameter, and \psnr[*] is the population optimal SNR.
 
-
-%UNFOLD
-
-\section{Square Root F}%FOLDUP
+\subsection{Square Root F}%FOLDUP
 
 \label{sec:root_F}
 
@@ -1481,6 +2999,8 @@ Using the Taylor series expansion of the square root gives the approximate mean 
 
 %UNFOLD
 
+%UNFOLD
+
 \section{Untangling Giri}%FOLDUP
 
 \label{sec:untangling_Giri}
@@ -1489,12 +3009,12 @@ Using the Taylor series expansion of the square root gives the approximate mean 
 \providecommand{\GN}{\MATHIT{N}}
 \providecommand{\GXgram}[1]{\ogram{\GXb{#1}}}
 \providecommand{\Gins}[1]{\GS{#1} + \GN\GXgram{#1}}
-\providecommand{\GSR}[1]{\qform{\minv{\GS{#1}}}{\GXb{#1}}}
-\providecommand{\Gform}[1]{\GN\qform{\minv{\wrapParens{\Gins{#1}}}}{\GXb{#1}}}
+\providecommand{\GSR}[1]{\qiform{\GS{#1}}{\GXb{#1}}}
+\providecommand{\Gform}[1]{\GN\qiform{\wrapParens{\Gins{#1}}}{\GXb{#1}}}
 
 \providecommand{\Gpvmu}[1][{}]{\mathSUB{\xi}{\wrapNeBracks{#1}}}
 \providecommand{\Gpvsig}[1][{}]{\mathSUB{\Sigma}{#1#1}}
-\providecommand{\GSNR}[1][{}]{\qform{\minv{\Gpvsig[#1]}}{\Gpvmu[#1]}}
+\providecommand{\GSNR}[1][{}]{\qiform{\Gpvsig[#1]}{\Gpvmu[#1]}}
 
 
 Here I translate Giri's work on Rao's LRT into the terminology used in the rest
@@ -1534,7 +3054,8 @@ parameter $\delta_2\wrapParens{1-R_1}$.
 From inspection, it is a 'type II' non-central beta, which can be
 transformed into a noncentral \flaw{}:
 \begin{equation}
-\frac{N-p}{p-q} \frac{1-Z}{Z} = \frac{N-p}{p-q} \frac{\GN\GSR{2} - \GN\GSR{1}}{1 + \GN\GSR{1}}.
+\frac{N-p}{p-q} \frac{1-Z}{Z} = 
+\frac{N-p}{p-q} \frac{\GN\GSR{2} - \GN\GSR{1}}{1 + \GN\GSR{1}}.
 \end{equation}
 
 Giri defines $R_1$ in equation (2.2). It is equivalent to
@@ -1547,10 +3068,12 @@ $$
 $$
 Taking this all together, we have, conditional on observing
 $\GSR{1}$, 
-\begin{equation}
-\frac{N-p}{p-q} \frac{\GN\GSR{2} - \GN\GSR{1}}{1 + \GN\GSR{1}} \sim
+%\begin{equation}
+\begin{multline}
+\frac{N-p}{p-q} \frac{\GN\GSR{2} - \GN\GSR{1}}{1 + \GN\GSR{1}} \sim\\
 \ncflaw{p-q,N-p,\frac{\GN\wrapParens{\GSNR - \GSNR[1]}}{1 + \GN\GSR{1}}}.
-\end{equation}
+\end{multline}
+%\end{equation}
 
 Now note that \GS{1} refers to the sample Gram matrix, and thus
 $\GS{1}/N$ is the biased covariance estimate, \usvsig on the subset
@@ -1583,6 +3106,8 @@ Thus, conditional on observing \ssrsqoptG{\hejG}, we have
 
 %UNFOLD
 
+
+%UNFOLD
 \end{document}
 %for vim modeline: (do not edit)
-% vim:fdm=marker:fmr=FOLDUP,UNFOLD:cms=%%s:syn=rnoweb:ft=rnoweb
+% vim:fdm=marker:fmr=FOLDUP,UNFOLD:cms=%%s:syn=rnoweb:ft=rnoweb:nu

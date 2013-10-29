@@ -184,7 +184,6 @@
 #' autocorrelation.
 #' \item Tests on Sharpe under positivity constraint. (\emph{c.f.} Silvapulle)
 #' \item Portfolio spanning tests.
-#' \item Tests of hedge restrictions.
 #' \item Tests on portfolio weights.
 #' }
 #' 
@@ -196,6 +195,12 @@ NULL
 #'
 #' \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 #' \newcommand{\SharpeR}{\CRANpkg{SharpeR}}
+#'
+#' @section Changes in \SharpeR{} Version 0.1310 (2013-10-30) :
+#'
+#' \itemize{
+#' \item inverse second moment asymptotic covariance.
+#' }
 #'
 #' @section Changes in \SharpeR{} Version 0.1309 (2013-09-20) :
 #'
