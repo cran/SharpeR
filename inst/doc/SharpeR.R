@@ -197,20 +197,6 @@ XLF.monthly <- mo.rets[,"XLF"]
 print(sr_test(x=XLU.monthly,y=XLF.monthly,ope=12,paired=TRUE))
 
 
-## ----'power_thing',fig.cap="The percent error of the power mnemonic $e\\approx\\ssiz \\psnrsq$ is plotted versus \\psnr.",fig.height=4,fig.width=5----
-ope <- 253
- zetas <- seq(0.1,2.5,length.out=51)
-ssizes <- sapply(zetas,function(zed) { 
- x <- power.sr_test(n=NULL,zeta=zed,sig.level=0.05,power=0.5,ope=ope)
- x$n / ope 
-})
-plot(zetas,100 * ((exp(1) / zetas^2) - ssizes)/ssizes, ylab="error in mnemonic rule (as %)")
-
-
-## ----'sobering',include=FALSE--------------------------------------------
-foo.power <- power.sr_test(n=253,zeta=NULL,sig.level=0.05,power=0.5,ope=253)
-
-
 ## ----'sropt_basics'------------------------------------------------------
 set.seed(as.integer(charToRaw("7bf4b86a-1834-4b58-9eff-6c7dec724fec")))
 # from a matrix object:
@@ -465,6 +451,31 @@ if (require(sandwich)) {
 if (require(sandwich)) {
 	HAC.Sig <- sr_vcov(some.rets,vcov=vcovHAC,ope=ope)
 	print(HAC.Sig$Ohat)
+}
+
+
+## ----'marko_vcov'--------------------------------------------------------
+# get returns
+some.rets <- get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01")
+
+ism.wald <- function(X,vcov.func=vcov) {
+	# negating returns is idiomatic to get + Markowitz
+	ism <- ism_vcov(- as.matrix(X),vcov.func=vcov.func)
+	ism.mu <- ism$mu[1:ism$p]
+	ism.Sg <- ism$Ohat[1:ism$p,1:ism$p]
+	retval <- ism.mu / sqrt(diag(ism.Sg))
+	dim(retval) <- c(ism$p,1)
+	rownames(retval) <- rownames(ism$mu)[1:ism$p]
+	return(retval)
+}
+
+wald.stats <- ism.wald(some.rets)
+print(t(wald.stats))
+
+if (require(sandwich)) {
+	wald.stats <- ism.wald(some.rets,vcov.func=sandwich::vcovHAC)
+	print(t(wald.stats))
 }
 
 

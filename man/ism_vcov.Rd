@@ -1,0 +1,92 @@
+\name{ism_vcov}
+\alias{ism_vcov}
+\title{Compute variance covariance of Inverse 'Unified' Second Moment}
+\usage{
+  ism_vcov(X,vcov.func=vcov)
+}
+\arguments{
+  \item{X}{an \eqn{n \times p}{n x p} matrix of observed
+  returns.}
+
+  \item{vcov.func}{a function which takes an object of
+  class \code{lm}, and computes a variance-covariance
+  matrix.}
+}
+\value{
+  a list containing the following components: \item{mu}{a
+  \eqn{q = p(p+3)/2} vector of the negative Markowitz
+  portfolio, then the vech'd precision matrix of the sample
+  data} \item{Ohat}{the \eqn{q \times q}{q x q} estimated
+  variance covariance matrix.} \item{n}{the number of rows
+  in \code{X}.} \item{p}{the number of assets.}
+}
+\description{
+  Computes the variance covariance matrix of the inverse
+  unified second moment matrix.
+}
+\details{
+  Given \eqn{p}-vector \eqn{x} with mean \eqn{\mu}{mu} and
+  covariance, \eqn{\Sigma}{Sigma}, let \eqn{y} be \eqn{x}
+  with a one prepended. Then let \eqn{\Theta = E\left(y
+  y^{\top}\right)}{Theta = E[yy']}, the uncentered second
+  moment matrix. The inverse of \eqn{\Theta}{Theta}
+  contains the (negative) Markowitz portfolio and the
+  precision matrix.
+
+  Given \eqn{n} contemporaneous observations of
+  \eqn{p}-vectors, stacked as rows in the \eqn{n \times
+  p}{n x p} matrix \eqn{X}, this function estimates the
+  mean and the asymptotic variance-covariance matrix of
+  \eqn{\Theta^{-1}}{Theta^-1}.
+
+  One may use the default method for computing covariance,
+  via the \code{\link{vcov}} function, or via a 'fancy'
+  estimator, like \code{sandwich:vcovHAC},
+  \code{sandwich:vcovHC}, \emph{etc.}
+}
+\note{
+  By flipping the sign of \eqn{X}, the inverse of
+  \eqn{\Theta}{Theta} contains the \emph{positive}
+  Markowitz portfolio and the precision matrix on \eqn{X}.
+  Performing this transform before passing the data to this
+  function should be considered idiomatic.
+}
+\examples{
+X <- matrix(rnorm(1000*3),ncol=3)
+# putting in -X is idiomatic:
+ism <- ism_vcov(-X)
+# compute the marginal Wald test statistics:
+ism.mu <- ism$mu[1:ism$p]
+ism.Sg <- ism$Ohat[1:ism$p,1:ism$p]
+wald.stats <- ism.mu / sqrt(diag(ism.Sg))
+
+# make it fat tailed:
+X <- matrix(rt(1000*3,df=5),ncol=3)
+ism <- ism_vcov(X)
+wald.stats <- ism$mu[1:ism$p] / sqrt(diag(ism$Ohat[1:ism$p,1:ism$p]))
+\dontrun{
+if (require(sandwich)) {
+ ism <- ism_vcov(X,vcov.func=vcovHC)
+ wald.stats <- ism$mu[1:ism$p] / sqrt(diag(ism$Ohat[1:ism$p,1:ism$p]))
+}
+}
+# add some autocorrelation to X
+Xf <- filter(X,c(0.2),"recursive")
+colnames(Xf) <- colnames(X)
+ism <- ism_vcov(Xf)
+wald.stats <- ism$mu[1:ism$p] / sqrt(diag(ism$Ohat[1:ism$p,1:ism$p]))
+\dontrun{
+if (require(sandwich)) {
+	ism <- ism_vcov(Xf,vcov.func=vcovHAC)
+ wald.stats <- ism$mu[1:ism$p] / sqrt(diag(ism$Ohat[1:ism$p,1:ism$p]))
+}
+}
+}
+\author{
+  Steven E. Pav \email{shabbychef@gmail.com}
+}
+\seealso{
+  \code{\link{sm_vcov}}, \code{\link{sr_vcov}}
+}
+\keyword{univar}
+
