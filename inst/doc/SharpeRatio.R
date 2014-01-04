@@ -172,6 +172,7 @@ vixlevi <- (0.4)^2
 
 
 ## ----'skewstudy_prelim',echo=FALSE,cache=FALSE---------------------------
+# MOCK it up.
 fname <- system.file('extdata','skew_study.rda',package='SharpeR')
 if (fname == "") {
 	fname <- 'skew_study.rda'
@@ -195,7 +196,8 @@ xres <- xtable(res,label="tab:sharpe_skew_robustness",
 print(xres,include.rownames=FALSE,hline.after=c(0,0,2,4,7,10,dim(res)[1]))
 
 
-## ----hot_ssiz_table,echo=FALSE,results='asis'----------------------------
+## ----'hot_ssiz_table',echo=FALSE,results='asis'--------------------------
+# MOCK it up.
 fname <- system.file('extdata','hotelling_power_rule.rda',package='SharpeR')
 if (fname == "") {
 	fname <- 'hotelling_power_rule.rda'
@@ -217,6 +219,125 @@ c <- ex_p / ex_n
 cplus <- (c + ex_snr_d ** 2)
 meanv <- sqrt(cplus / (1 - c))
 stdv <- sqrt((1 / ex_n) * (ex_snr_d ** 4 + 2 * ex_snr_d ** 2 + c) / (2 * cplus * (1 - c) ** 2))
+
+
+## ----'haircut_study_load',echo=FALSE,cache=FALSE-------------------------
+# MOCK it up.
+fname <- system.file('extdata','haircut_study.rda',package='SharpeR')
+if (fname == "") {
+	fname <- 'haircut_study.rda'
+}
+# poofs n.sim,n.stok,n.yr,n.obs,zeta.s,ope,hcuts
+load(fname)
+
+medv.true <- median(hcuts)
+med.snr.true <- zeta.s * (1 - medv.true)
+
+
+## ----'haircut_study_mock',eval=FALSE,echo=TRUE---------------------------
+## require(MASS)
+## 
+## # simple markowitz.
+## simple.marko <- function(rets) {
+## 	mu.hat <- as.vector(apply(rets,MARGIN=2,mean,na.rm=TRUE))
+## 	Sig.hat <- cov(rets)
+## 	w.opt <- solve(Sig.hat,mu.hat)
+## 	retval <- list('mu'=mu.hat,'sig'=Sig.hat,'w'=w.opt)
+## 	return(retval)
+## }
+## # make multivariate pop. & sample w/ given zeta.star
+## gen.pop <- function(n,p,zeta.s=0) {
+## 	true.mu <- matrix(rnorm(p),ncol=p)
+## 	#generate an SPD population covariance. a hack.
+## 	xser <- matrix(rnorm(p*(p + 100)),ncol=p)
+## 	true.Sig <- t(xser) %*% xser
+## 	pre.sr <- sqrt(true.mu %*% solve(true.Sig,t(true.mu)))
+## 	#scale down the sample mean to match the zeta.s
+## 	true.mu <- (zeta.s/pre.sr[1]) * true.mu
+##   X <- mvrnorm(n=n,mu=true.mu,Sigma=true.Sig)
+## 	retval = list('X'=X,'mu'=true.mu,'sig'=true.Sig,'SNR'=zeta.s)
+## 	return(retval)
+## }
+## # a single simulation
+## sample.haircut <- function(n,p,...) {
+## 	popX <- gen.pop(n,p,...)
+## 	smeas <- simple.marko(popX$X)
+## 	# I have got to figure out how to deal with vectors...
+## 	ssnr <- (t(smeas$w) %*% t(popX$mu)) / sqrt(t(smeas$w) %*% popX$sig %*% smeas$w)
+## 	hcut <- 1 - (ssnr / popX$SNR)
+## 	# for plugin estimator, estimate zeta.star
+## 	asro <- sropt(z.s=sqrt(t(smeas$w) %*% smeas$mu),df1=p,df2=n)
+## 	zeta.hat.s <- inference(asro,type="KRS")  # or 'MLE', 'unbiased'
+## 	return(c(hcut,zeta.hat.s))
+## }
+## 
+## # set everything up
+## set.seed(as.integer(charToRaw("496509a9-dd90-4347-aee2-1de6d3635724")))
+## ope <- 253
+## n.sim <- 4096
+## n.stok <- 6
+## n.yr <- 4
+## n.obs <- ceiling(ope * n.yr)
+## zeta.s <- 1.20 / sqrt(ope)   # optimal SNR, in daily units
+## 
+## # run some experiments
+## experiments <- replicate(n.sim,sample.haircut(n.obs,n.stok,zeta.s))
+## hcuts <- experiments[1,]
+
+
+## ----'haircutting',fig.cap=paste("Q-Q plot of",n.sim,"simulated haircut values versus the approximation given by \\eqnref{hcut_apx} is shown.")----
+print(summary(hcuts))
+# haircut approximation in the equation above
+qhcut <- function(p, df1, df2, zeta.s, lower.tail=TRUE) {
+	atant <- atan((1/sqrt(df1-1)) * 
+		qt(p,df=df1-1,ncp=sqrt(df2)*zeta.s,lower.tail=!lower.tail))
+	# a slightly better approximation is:
+	# retval <- 1 - sin(atant - 0.0184 * zeta.s * sqrt(df1 - 1))
+	retval <- 1 - sin(atant)
+}
+# if you wanted to look at how bad the plug-in estimator is, then
+# uncomment the following (you are warned):
+# zeta.hat.s <- experiments[2,];                                   
+# qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.hat.s),hcuts,
+# 			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles");
+# qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.hat.s) },
+# 			 col=2)
+
+# qqplot;
+qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.s),hcuts,
+			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles")
+qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.s) },
+			 col=2)
+
+
+## ----'hcut_moments',echo=FALSE,results='asis'----------------------------
+mc.med <- median(hcuts)
+mc.mean <- mean(hcuts)
+mc.sd <- sd(hcuts)
+
+mc.p <- n.stok
+mc.n <- n.obs
+mc.zs <- zeta.s
+
+fit.med <- 1 - sin(atan(mc.zs * sqrt(mc.n / (mc.p - 1))))
+fit.mean <- 1 - sqrt(1 - (mc.p / (mc.p + mc.n * mc.zs^2)))
+fit.sd <- sqrt(mc.p) / (mc.p + (mc.n * mc.zs^2) ^ 1.08)
+
+fit.df <- data.frame(Monte.Carlo=c(mc.med,mc.mean,mc.sd),
+		approximation=c(fit.med,fit.mean,fit.sd))
+rownames(fit.df) <- c("median","mean","standard deviation")
+
+# 2FIX: start here;yy
+xres <- xtable(fit.df,label="tab:hcutfit",
+	caption=paste("Empirical approximate values of the median, mean, and",
+	"standard deviation of the haircut distribution are given for",
+	n.sim,"Monte Carlo simulations of",n.obs,"days of Gaussian data for",n.stok,
+	"assets with $\\psnropt=",zeta.s * sqrt(ope),"\\yrtomhalf$.",
+	"The approximations from \\eqnref{hcut_moment_appx} are also reported."))
+
+print(xres,include.rownames=TRUE,sanitize.text.function=function(x){x})
+
+
 
 
 ## ----'pos_cons_example', include=FALSE, warning=FALSE, message=FALSE-----
@@ -353,80 +474,5 @@ ism.wald <- ism.ws(rets)
 # compare them:
 print(bjones.tstat)
 print(ism.wald)
-
-
-## ----'haircutting',fig.cap=paste("Q-Q plot of",n.sim,"simulated haircut values versus the approximation given by \\eqnref{hcut_apx} is shown.")----
-require(MASS)
-
-# simple markowitz.
-simple.marko <- function(rets) {
-	mu.hat <- as.vector(apply(rets,MARGIN=2,mean,na.rm=TRUE))
-	Sig.hat <- cov(rets)
-	w.opt <- solve(Sig.hat,mu.hat)
-	retval <- list('mu'=mu.hat,'sig'=Sig.hat,'w'=w.opt)
-	return(retval)
-}
-# make multivariate pop. & sample w/ given zeta.star
-gen.pop <- function(n,p,zeta.s=0) {
-	true.mu <- matrix(rnorm(p),ncol=p)
-	#generate an SPD population covariance. a hack.
-	xser <- matrix(rnorm(p*(p + 100)),ncol=p)
-	true.Sig <- t(xser) %*% xser
-	pre.sr <- sqrt(true.mu %*% solve(true.Sig,t(true.mu)))
-	#scale down the sample mean to match the zeta.s
-	true.mu <- (zeta.s/pre.sr[1]) * true.mu 
-  X <- mvrnorm(n=n,mu=true.mu,Sigma=true.Sig)
-	retval = list('X'=X,'mu'=true.mu,'sig'=true.Sig,'SNR'=zeta.s)
-	return(retval)
-}
-# a single simulation
-sample.haircut <- function(n,p,...) {
-	popX <- gen.pop(n,p,...)
-	smeas <- simple.marko(popX$X)
-	# I have got to figure out how to deal with vectors...
-	ssnr <- (t(smeas$w) %*% t(popX$mu)) / sqrt(t(smeas$w) %*% popX$sig %*% smeas$w)
-	hcut <- 1 - (ssnr / popX$SNR)
-	# for plugin estimator, estimate zeta.star
-	asro <- sropt(z.s=sqrt(t(smeas$w) %*% smeas$mu),df1=p,df2=n)
-	zeta.hat.s <- inference(asro,type="KRS")  # or 'MLE', 'unbiased'
-	return(c(hcut,zeta.hat.s))
-}
-
-# set everything up
-set.seed(as.integer(charToRaw("496509a9-dd90-4347-aee2-1de6d3635724")))
-ope <- 253
-LONG.FORM <- FALSE
-n.sim <- if (LONG.FORM) 2048 else 512
-n.stok <- if (LONG.FORM) 8 else 6
-n.yr <- 4
-n.obs <- ceiling(ope * n.yr)
-zeta.s <- 1.20 / sqrt(ope)   # optimal SNR, in daily units
-
-# run some experiments
-system.time(experiments <- replicate(n.sim,sample.haircut(n.obs,n.stok,zeta.s)))
-hcuts <- experiments[1,]
-print(summary(hcuts))
-# haircut approximation in the equation above
-qhcut <- function(p, df1, df2, zeta.s, lower.tail=TRUE) {
-	1 - sin(atan((1/sqrt(df1-1)) * qt(p,df=df1-1,ncp=sqrt(df2)*zeta.s,lower.tail=!lower.tail)))
-}
-# if you wanted to look at how bad the plug-in estimator is, then
-# uncomment the following (you are warned):
-# zeta.hat.s <- experiments[2,];                                   
-# qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.hat.s),hcuts,
-# 			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles");
-# qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.hat.s) },
-# 			 col=2)
-
-# qqplot;
-qqplot(qhcut(ppoints(length(hcuts)),n.stok,n.obs,zeta.s),hcuts,
-			 xlab = "Theoretical Approximate Quantiles", ylab = "Sample Quantiles")
-qqline(hcuts,datax=FALSE,distribution = function(p) { qhcut(p,n.stok,n.obs,zeta.s) },
-			 col=2)
-
-
-## ----'hcut_med',include=FALSE--------------------------------------------
-medv.true <- median(hcuts)
-med.snr.true <- zeta.s * (1 - medv.true)
 
 

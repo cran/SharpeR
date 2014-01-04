@@ -82,6 +82,7 @@ print(asr)
 
 
 ## ----'stock_loading',eval=FALSE,echo=TRUE--------------------------------
+## # MOCK it up.
 ## require(quantmod)
 ## # get price data, compute log returns on adjusted closes
 ## get.ret <- function(sym,warnings=FALSE,...) {
