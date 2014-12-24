@@ -1,5 +1,4 @@
-
-## ----'preamble', include=FALSE, warning=FALSE, message=FALSE-------------
+## ----'preamble', include=FALSE, warning=FALSE, message=FALSE----
 library(knitr)
 
 # set the knitr options ... for everyone!
@@ -46,8 +45,7 @@ LONG.FORM <- FALSE
 library(quantmod)
 options("getSymbols.warning4.0"=FALSE)
 
-
-## ----'babysteps'---------------------------------------------------------
+## ----'babysteps'----------------------------------------------
 library(SharpeR)
 # suppose you computed the Sharpe of your strategy to
 # be 1.3 / sqrt(yr), based on 1200 daily observations.
@@ -62,8 +60,7 @@ rownames(srstats) <- c("strat. A","strat. B","benchmark")
 my.sr <- sr(srstats,df=1200-1,ope=252,epoch="yr")
 print(my.sr)
 
-
-## ----'showoff'-----------------------------------------------------------
+## ----'showoff'------------------------------------------------
 set.seed(as.integer(charToRaw("set the seed")))
 # Sharpe's 'model': just given a bunch of returns.
 returns <- rnorm(253*8,mean=3e-4,sd=1e-2)
@@ -73,44 +70,40 @@ print(asr)
 asr <- as.sr(data.frame(my.strategy=returns),ope=253,epoch="yr")
 print(asr)
 
-
-## ----'more_data_frame'---------------------------------------------------
+## ----'more_data_frame'----------------------------------------
 # a data.frame with multiple strategies
 asr <- as.sr(data.frame(strat1=rnorm(253*8),strat2=rnorm(253*8,mean=4e-4,sd=1e-2)),
 	ope=253,epoch="yr")
 print(asr)
 
+## ----'stock_loading',eval=FALSE,echo=TRUE---------------------
+#  require(quantmod)
+#  # get price data, compute log returns on adjusted closes
+#  get.ret <- function(sym,warnings=FALSE,...) {
+#  	# getSymbols.yahoo will barf sometimes; do a trycatch
+#    trynum <- 0
+#  	while (!exists("OHCLV") && (trynum < 7)) {
+#  		trynum <- trynum + 1
+#  		try(OHLCV <- getSymbols(sym,auto.assign=FALSE,warnings=warnings,...),silent=TRUE)
+#    }
+#  	adj.names <- paste(c(sym,"Adjusted"),collapse=".",sep="")
+#  	if (adj.names %in% colnames(OHLCV)) {
+#  		adj.close <- OHLCV[,adj.names]
+#  	} else {
+#  		# for DJIA from FRED, say.
+#  		adj.close <- OHLCV[,sym]
+#  	}
+#  	rm(OHLCV)
+#  	# rename it
+#  	colnames(adj.close) <- c(sym)
+#  	adj.close <- adj.close[!is.na(adj.close)]
+#  	lrets <- diff(log(adj.close))
+#  	#chop first
+#  	lrets[-1,]
+#  }
+#  get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
 
-## ----'stock_loading',eval=FALSE,echo=TRUE--------------------------------
-## # MOCK it up.
-## require(quantmod)
-## # get price data, compute log returns on adjusted closes
-## get.ret <- function(sym,warnings=FALSE,...) {
-## 	# getSymbols.yahoo will barf sometimes; do a trycatch
-##   trynum <- 0
-## 	while (!exists("OHCLV") && (trynum < 7)) {
-## 		trynum <- trynum + 1
-## 		try(OHLCV <- getSymbols(sym,auto.assign=FALSE,warnings=warnings,...),silent=TRUE)
-##   }
-## 	adj.names <- paste(c(sym,"Adjusted"),collapse=".",sep="")
-## 	if (adj.names %in% colnames(OHLCV)) {
-## 		adj.close <- OHLCV[,adj.names]
-## 	} else {
-## 		# for DJIA from FRED, say.
-## 		adj.close <- OHLCV[,sym]
-## 	}
-## 	rm(OHLCV)
-## 	# rename it
-## 	colnames(adj.close) <- c(sym)
-## 	adj.close <- adj.close[!is.na(adj.close)]
-## 	lrets <- diff(log(adj.close))
-## 	#chop first
-## 	lrets[-1,]
-## }
-## get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
-
-
-## ----'stock_loading_sneaky',eval=TRUE,echo=FALSE-------------------------
+## ----'stock_loading_sneaky',eval=TRUE,echo=FALSE--------------
 # sleight of hand to load precomputed data instead.
 get.rets <- function(syms,from='2003-01-01',to='2013-01-01',...) {
 	fname <- system.file('extdata','ret_data.rda',package='SharpeR')
@@ -123,8 +116,7 @@ get.rets <- function(syms,from='2003-01-01',to='2013-01-01',...) {
 	return(sub.data)
 }
 
-
-## ----'helper_function'---------------------------------------------------
+## ----'helper_function'----------------------------------------
 require(quantmod)
 # quantmod::periodReturn does not deal properly with multiple
 # columns, and the straightforward apply(mtms,2,periodReturn) barfs
@@ -142,22 +134,19 @@ lr2mtm <- function(x,...) {
 	exp(cumsum(x))
 }
 
-
-## ----'some_stocks'-------------------------------------------------------
+## ----'some_stocks'--------------------------------------------
 some.rets <- get.rets(c("IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
 print(as.sr(some.rets))
 
-
-## ----'reannualize'-------------------------------------------------------
+## ----'reannualize'--------------------------------------------
 yearly <- as.sr(some.rets[,"XOM"])
 monthly <- reannualize(yearly,new.ope=21,new.epoch="mo.")
 print(yearly)
 # significance should be the same, but units changed.
 print(monthly)
 
-
-## ----'AAPL'--------------------------------------------------------------
+## ----'AAPL'---------------------------------------------------
 # get the returns (see above for the function)
 aapl.rets <- get.rets(c("AAPL","SPY"),from="2003-01-01",to="2013-01-01")
 # make them monthly:
@@ -180,8 +169,7 @@ print(CAPM.sr)
 print(confint(linmod,'(Intercept)'))
 print(confint(CAPM.sr))
 
-
-## ----'SPDRcheck'---------------------------------------------------------
+## ----'SPDRcheck'----------------------------------------------
 # get the sector 'spiders'
 secto.rets <- get.rets(c("XLY","XLE","XLP","XLF","XLV","XLI","XLB","XLK","XLU"),
 	from="2003-01-01",to="2013-01-01")
@@ -197,8 +185,7 @@ print(sr_equality_test(secto.rets))
 XLF.monthly <- mo.rets[,"XLF"]
 print(sr_test(x=XLU.monthly,y=XLF.monthly,ope=12,paired=TRUE))
 
-
-## ----'sropt_basics'------------------------------------------------------
+## ----'sropt_basics'-------------------------------------------
 set.seed(as.integer(charToRaw("7bf4b86a-1834-4b58-9eff-6c7dec724fec")))
 # from a matrix object:
 ope <- 253
@@ -220,16 +207,14 @@ some.rets <- get.rets(c("IBM","AAPL","XOM"),
 asro <- as.sropt(some.rets)
 print(asro)
 
-
-## ----'sropt_estim'-------------------------------------------------------
+## ----'sropt_estim'--------------------------------------------
 # confidence intervals:
 print(confint(asro,level.lo=0.05,level.hi=1))
 # estimation
 print(inference(asro,type="KRS"))
 print(inference(asro,type="MLE"))
 
-
-## ----'MLE_rule'----------------------------------------------------------
+## ----'MLE_rule'-----------------------------------------------
 ope <- 253
 zeta.s <- 0.8
 n.check <- 1000
@@ -243,7 +228,6 @@ crit.value <- 0.5 * (max(rvs[zerMLE])^2 + min(rvs[!zerMLE])^2)
 aspect.ratio <- df1 / (df2 / ope)
 cat(sprintf("empirical cutoff for zero MLE is %2.2f yr^{-1}\n", crit.value))
 cat(sprintf("the aspect ratio is %2.2f yr^{-1}\n",aspect.ratio))
-
 
 ## ----'estimate_overfit',fig.cap=paste("Q-Q plot of",n.sim,"achieved optimal \\txtSR values from brute force search over both windows of a Moving Average Crossover under the null of driftless log returns with zero autocorrelation versus the approximation by a 2-parameter optimal \\txtSR distribution is shown.")----
 require(TTR)
@@ -299,8 +283,7 @@ qqplot(qsropt(ppoints(length(max.zeds)),df1=2,df2=n.obs),max.zeds,
 qqline(max.zeds,datax=FALSE,distribution = function(p) { qsropt(p,df1=2,df2=n.obs) },
 			 col=2)
 
-
-## ----'now_on_spy'--------------------------------------------------------
+## ----'now_on_spy'---------------------------------------------
 # is MAC on SPY significant?
 SPY.lret <- get.rets(c('SPY'),from="2003-01-01",to="2013-01-01")
 # oops! there might be NAs in there!
@@ -315,8 +298,7 @@ SPY.MAC.asro <- sropt(z.s=zeds,df1=2,df2=length(SPY.lret) - max(win1),ope=mysr$o
 print(SPY.MAC.asro)
 print(inference(SPY.MAC.asro,type="KRS"))
 
-
-## ----'del_sropt_basics'--------------------------------------------------
+## ----'del_sropt_basics'---------------------------------------
 set.seed(as.integer(charToRaw("364e72ab-1570-43bf-a1c6-ee7481e1c631")))
 # from a matrix object:
 ope <- 253
@@ -338,8 +320,7 @@ G <- diag(n.stok)[1,]
 asro <- as.del_sropt(rand.rets,G,ope=ope)
 print(asro)
 
-
-## ----'del_sropt_hedging'-------------------------------------------------
+## ----'del_sropt_hedging'--------------------------------------
 # from an xts object
 some.rets <- get.rets(c("SPY","IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
@@ -351,14 +332,12 @@ G <- diag(dim(some.rets)[2])[1,]
 asro.hej <- as.del_sropt(some.rets,G)
 print(asro.hej)
 
-
-## ----'del_sropt_estim'---------------------------------------------------
+## ----'del_sropt_estim'----------------------------------------
 # confidence intervals:
 print(confint(asro,level.lo=0.05,level.hi=1))
 # estimation
 print(inference(asro,type="KRS"))
 print(inference(asro,type="MLE"))
-
 
 ## ----'sr_eq_test_normal',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, normally distributed returns series are Q-Q plotted against uniformity.")----
 # function for Q-Q plot against uniformity
@@ -380,14 +359,12 @@ afoo <- replicate(n.sim,sr_equality_test(matrix(rnorm(n.ro*n.co),ncol=n.co),type
 sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
-
 ## ----'sr_eq_test_hetero',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of independent, \\tlaw{}-distributed returns series are Q-Q plotted against uniformity.")----
 # try heteroskedasticity?
 set.seed(as.integer(charToRaw("81c97c5e-7b21-4672-8140-bd01d98d1d2e")))
 afoo <- replicate(n.sim,sr_equality_test(matrix(rt(n.ro*n.co,df=4),ncol=n.co),type="F"))
 sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
-
 
 ## ----'sr_eq_test_correlated',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of correlated, normally-distributed returns series are Q-Q plotted against uniformity.")----
 # try correlated returns
@@ -402,11 +379,9 @@ afoo <- replicate(n.sim,sr_equality_test(gen.ret(n.ro,n.co,n.fact),type="F"))
 sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
-
-## ----'sr_eq_test_mtime_pre',echo=FALSE-----------------------------------
+## ----'sr_eq_test_mtime_pre',echo=FALSE------------------------
 n.co <- if (LONG.FORM) 100 else 50 
 n.sim <- if (LONG.FORM) 1024 else 128
-
 
 ## ----'sr_eq_test_mtime',fig.cap=paste("P-values from \\Rfunction{sr\\_equality\\_test} on",n.sim,"multiple realizations of",n.co,"market timing strategies' returns series are Q-Q plotted against uniformity. Nominal coverage is not maintained: the test is far too liberal in this case.")----
 n.co <- if (LONG.FORM) 100 else 50 
@@ -423,8 +398,7 @@ system.time(afoo <- replicate(n.sim,sr_equality_test(gen.tim(n.co),type="F")))
 sr_eq.pvals <- unlist(afoo["p.value",])
 qqunif(sr_eq.pvals)
 
-
-## ----'sr_fancy_eq'-------------------------------------------------------
+## ----'sr_fancy_eq'--------------------------------------------
 # get returns
 some.rets <- get.rets(c("IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
@@ -437,8 +411,7 @@ if (require(sandwich)) {
 	print(test.HAC)
 }
 
-
-## ----'sr_vcov'-----------------------------------------------------------
+## ----'sr_vcov'------------------------------------------------
 # get returns
 some.rets <- get.rets(c("IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
@@ -454,8 +427,7 @@ if (require(sandwich)) {
 	print(HAC.Sig$Ohat)
 }
 
-
-## ----'marko_vcov'--------------------------------------------------------
+## ----'marko_vcov'---------------------------------------------
 # get returns
 some.rets <- get.rets(c("IBM","AAPL","XOM"),
 	from="2007-01-01",to="2013-01-01")
@@ -478,5 +450,4 @@ if (require(sandwich)) {
 	wald.stats <- ism.wald(some.rets,vcov.func=sandwich::vcovHAC)
 	print(t(wald.stats))
 }
-
 

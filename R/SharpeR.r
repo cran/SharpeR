@@ -186,15 +186,22 @@
 #' \item Portfolio spanning tests.
 #' \item Tests on portfolio weights.
 #' }
-#' 
 #' This package is maintained as a hobby. 
 #'
+#' @import matrixcalc 
 NULL
 
 #' @title News for package 'SharpeR':
 #'
 #' \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 #' \newcommand{\SharpeR}{\CRANpkg{SharpeR}}
+#'
+#' @section Changes in \SharpeR{} Version 0.1501 (2014-12-06) :
+#'
+#' \itemize{
+#' \item fix inference of mark frequency from e.g. xts objects.
+#' \item add rlambdap.
+#' }
 #'
 #' @section Changes in \SharpeR{} Version 0.1401 (2014-01-05) :
 #'
