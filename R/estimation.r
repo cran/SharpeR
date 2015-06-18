@@ -152,12 +152,12 @@ sr_vcov <- function(X,vcov.func=vcov,ope=1) {
 
 # this is for shit b/c it can be negative. ditch it.
 # See Walck, section 33.3
-.t_se_weird <- function(tstat,df) {
-	cn <- .tbias(df)
-	dn <- tstat / cn
-	se <- sqrt(((1+(dn*dn)) * (df/df-2)) - (tstat*tstat))
-	return(se)
-}
+#.t_se_weird <- function(tstat,df) {
+	#cn <- .tbias(df)
+	#dn <- tstat / cn
+	#se <- sqrt(((1+(dn*dn)) * (df/df-2)) - (tstat*tstat))
+	#return(se)
+#}
 # See Walck, section 33.5
 .t_se_normal <- function(tstat,df) {
 	se <- sqrt(1 + (tstat**2) / (2*df))
@@ -170,7 +170,6 @@ sr_vcov <- function(X,vcov.func=vcov,ope=1) {
 	se <- switch(type,
 							 t = .t_se_normal(t,df),
 							 Lo = .t_se_normal(t,df))
-							 #exact = .t_se_weird(t,df))
 	return(se)
 }
 # confidence intervals on the non-centrality parameter of a t-stat
@@ -433,6 +432,130 @@ confint.del_sropt <- function(object,parm,level=0.95,
 	return(retval)
 }
 #UNFOLD
+
+# prediction intervals on the Sharpe ratio#FOLDUP
+#' @title prediction interval for Sharpe ratio
+#'
+#' @description 
+#'
+#' Computes the prediction interval for Sharpe ratio.
+#'
+#' @details 
+#'
+#' Given \eqn{n_0}{n_0} observations \eqn{x_i}{xi} from a normal random variable,
+#' with mean \eqn{\mu}{mu} and standard deviation \eqn{\sigma}{sigma}, computes
+#' an interval \eqn{[y_1,y_2]}{[y_1,y_2]} such that with a fixed probability,
+#' the sample Sharpe ratio over \eqn{n}{n} future observations will fall in the
+#' given interval. The coverage is over repeated draws of both the past and
+#' future data, thus this computation takes into account error in both the
+#' estimate of Sharpe and the as yet unrealized returns.
+#' 
+#' @usage
+#'
+#' predint(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
+#'				 level.lo=(1-level)/2,level.hi=1-level.lo)
+#'
+#' @param x a (non-empty) numeric vector of data values, or an
+#'    object of class \code{sr}.
+#' @param oosdf the future (or 'out of sample', thus 'oos') degrees of freedom.
+#'    In the vanilla Sharpe case, this is the number of future observations
+#'    \emph{minus one}.
+#' @param oosrescal the rescaling parameter for the future Sharpe ratio. The default value
+#'    holds for the case of unattributed models ('vanilla Shape'), but can be set
+#'    to some other value to deal with the magnitude of attribution factors in the
+#'    future period.
+#' @param ope the number of observations per 'epoch'. For convenience of
+#'   interpretation, The Sharpe ratio is typically quoted in 'annualized' 
+#'   units for some epoch, that is, 'per square root epoch', though returns 
+#'   are observed at a frequency of \code{ope} per epoch. 
+#'   The default value is to take the same \code{ope} from the input \code{x}
+#'   object, if it is unambiguous. 
+#' @param level the confidence level required.
+#' @param level.lo the lower confidence level required.
+#' @param level.hi the upper confidence level required.
+#' @return A matrix (or vector) with columns giving lower and upper
+#' confidence limits for the parameter. These will be labelled as
+#' level.lo and level.hi in \%, \emph{e.g.} \code{"2.5 \%"}
+#' @seealso \code{\link{confint.sr}}.
+#' @export 
+#' @template etc
+#' @template sr
+#' @template ref-upsilon
+#' @examples 
+#'
+#' # should reject null
+#' etc <- predint(rnorm(1000,mean=0.5,sd=0.1),oosdf=127,ope=1)
+#' etc <- predint(matrix(rnorm(1000*5,mean=0.05),ncol=5),oosdf=63,ope=1)
+#'
+#' # check coverage
+#' mu <- 0.0005
+#' sg <- 0.013
+#' n1 <- 512
+#' n2 <- 256
+#' p  <- 100
+#' x1 <- matrix(rnorm(n1*p,mean=mu,sd=sg),ncol=p)
+#' x2 <- matrix(rnorm(n2*p,mean=mu,sd=sg),ncol=p)
+#' sr1 <- as.sr(x1)
+#' sr2 <- as.sr(x2)
+#' \dontrun{
+#' # takes too long to run ... 
+#' etc1 <- predint(sr1,oosdf=n2-1,level=0.95)
+#' is.ok <- (etc1[,1] <= sr2$sr) & (sr2$sr <= etc1[,2])
+#' covr <- mean(is.ok)
+#' }
+#'
+#' @export
+predint <- function(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
+										level.lo=(1-level)/2,level.hi=1-level.lo) {
+	if (is.sr(x)) {
+		srx <- x
+	} else {
+		srx <- as.sr(x,c0=0,ope=1,na.rm=TRUE)
+	}
+	if (is.null(ope)) { ope <- srx$ope }
+	cols <- mapply(function(sx,dfx,rescalx) {
+		cons <- 1 / sqrt(rescalx^2 + oosrescal^2)
+		udf <- c(dfx,oosdf)
+		# eventually this guesswork involving uniroot will be replaced by another distribution
+		# that is similar to the upsilon, but has another chi in the denominator...
+		pfunc <- function(y,lvl) { 
+			ut <- cons * c(sx,-y)
+			retv <- lvl - sadists::pupsilon(0,df=udf,t=ut,lower.tail=TRUE)
+		}
+		ci <- lapply(c(level.lo,level.hi),function(lvl) {
+			if ((0 < lvl) && (lvl < 1)) {
+				# this is the only part that needs to be fixed:
+				# how to guess the interval.
+				lwt <- 3
+				alps <- (1/(lwt+1)) * (lwt*lvl + c(0,1))
+				invl <- sx + (1/cons) * qnorm(alps)
+				falps <- unlist(lapply(invl,pfunc,lvl=lvl))
+				itr <- 0
+				while ((prod(sign(falps)) > 0) && (itr < 60)) {
+					alps <- 0.5 * (alps + c(0,1))
+					invl <- sx + (1/cons) * qnorm(alps)
+					falps <- unlist(lapply(invl,pfunc,lvl=lvl))
+					itr <- itr + 1
+				}
+				invl <- sx + (1/cons) * qnorm(0.5 * (lvl + c(0,1)))
+				etc <- uniroot(pfunc,interval=invl,
+											 lower=invl[1],upper=invl[2],
+											 f.lower=falps[1],f.upper=falps[2],lvl=lvl)
+				yval <- .annualize(etc$root,ope)
+			} else {
+				yval <- ifelse(lvl >= 1,Inf,-Inf)
+			}
+		})
+		retval <- matrix(ci,nrow=1)
+	},srx$sr,srx$df,srx$rescal)
+	retval <- t(cols)
+	colnames(retval) <- sapply(c(level.lo,level.hi),function(x) { sprintf("%g %%",100*x) })
+
+	rownames(retval) <- .get_strat_names(srx$sr)
+	retval
+}
+#UNFOLD
+
 
 # point inference on sropt/ncp of F#FOLDUP
 

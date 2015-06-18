@@ -234,7 +234,8 @@ as.sr <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
 		df <- apply(!is.na(x),2,sum)
 	else
 		df <- dim(x)[1]
-
+	
+	# n.b. sr$df is n-1
 	retval <- sr(z,df=df-1,c0=c0,ope=ope,
 							 rescal=1/sqrt(df),epoch=epoch)
 	return(retval)
@@ -414,10 +415,11 @@ print.sr <- function(x,...) {
 	retv <- prt(q$sr,df=q$df,K=(q$rescal * sqrt(q$ope)),rho=zeta,...)
 	return(retv)
 }
-.dsr <- function(q,zeta,...) {
-	retv <- drt(q$sr,df=q$df,K=(q$rescal * sqrt(q$ope)),rho=zeta,...)
-	return(retv)
-}
+# no longer needed?
+#.dsr <- function(q,zeta,...) {
+	#retv <- drt(q$sr,df=q$df,K=(q$rescal * sqrt(q$ope)),rho=zeta,...)
+	#return(retv)
+#}
 
 #' @title Change the annualization of a Sharpe ratio.
 #'

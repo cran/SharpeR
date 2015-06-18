@@ -126,7 +126,7 @@
 #' Wright, J. A., Yam, S. C. P., and Yung, S. P. "A note on the test for the
 #' equality of multiple Sharpe ratios and its application on the evaluation
 #' of iShares." J. Risk. to appear. 
-#' \url{http://www.sta.cuhk.edu.hk/scpy/Preprints/John\%20Wright/A\%20test\%20for\%20the\%20equality\%20of\%20multiple\%20Sharpe\%20ratios.pdf}
+#' \url{http://www.risk.net/journal-of-risk/technical-paper/2340067/a-test-for-the-equality-of-multiple-sharpe-ratios}
 #'
 #' Leung, P.-L., and Wong, W.-K. "On testing the equality of multiple Sharpe ratios, with 
 #' application on the evaluation of iShares." J. Risk 10, no. 3 (2008): 15--30.
@@ -248,6 +248,7 @@ sr_equality_test <- function(X,type=c("chisq","F","t"),
 
 # SR test#FOLDUP
 #getAnywhere("t.test.default")
+#getAnywhere("print.htest")
 #' @title test for Sharpe ratio
 #'
 #' @description 
@@ -269,9 +270,7 @@ sr_equality_test <- function(X,type=c("chisq","F","t"),
 #'
 #' For unpaired (and independent) observations, tests
 #' \deqn{H_0: \frac{\mu_x}{\sigma_x} - \frac{\mu_u}{\sigma_y} = S}{H0: mu_x / sigma_x - mu_y / sigma_y = S}
-#' against two or one-sided alternatives via a normal approximation 
-#' (which is probably not very good for small sample sizes). At some point, the
-#' procedure of Ghosh (1975) or variant thereof should perhaps be employed?
+#' against two or one-sided alternatives via the upsilon distribution.
 #' 
 #' @usage
 #'
@@ -279,9 +278,11 @@ sr_equality_test <- function(X,type=c("chisq","F","t"),
 #'         zeta=0,ope=1,paired=FALSE,conf.level=0.95)
 #'
 #' @param x a (non-empty) numeric vector of data values, or an
-#'    object of class \code{sr}, in which case we perform
-#'    single-sample tests.
-#' @param y an optional (non-empty) numeric vector of data values.
+#'    object of class \code{sr}, containing a scalar sample Sharpe estimate.
+#' @param y an optional (non-empty) numeric vector of data values, or
+#'    an object of class \code{sr}, containing a scalar sample Sharpe estimate.
+#'    Only an unpaired test can be performed when at least one of \code{x} and \code{y} are
+#'    of class \code{sr}
 #' @param alternative a character string specifying the alternative hypothesis,
 #'       must be one of \code{"two.sided"} (default), \code{"greater"} or
 #'       \code{"less"}.  You can specify just the initial letter.
@@ -296,23 +297,18 @@ sr_equality_test <- function(X,type=c("chisq","F","t"),
 #' \item{statistic}{the value of the t- or Z-statistic.}
 #' \item{parameter}{the degrees of freedom for the statistic.}
 #' \item{p.value}{the p-value for the test.}
-#' \item{conf.int}{a confidence interval appropriate to the specified alternative hypothesis.}
+#' \item{conf.int}{a confidence interval appropriate to the specified alternative hypothesis. NYI for some cases.}
 #' \item{estimate}{the estimated Sharpe or difference in Sharpes depending on whether it was a one-sample test or a two-sample test. Annualized}
 #' \item{null.value}{the specified hypothesized value of the Sharpe or difference of Sharpes depending on whether it was a one-sample test or a two-sample test.}
 #' \item{alternative}{a character string describing the alternative hypothesis.}
 #' \item{method}{a character string indicating what type of test was performed.}
 #' \item{data.name}{a character string giving the name(s) of the data.}
-#' @seealso \code{\link{sr_equality_test}}, \code{\link{t.test}}.
+#' @seealso \code{\link{sr_equality_test}}, \code{\link{sr_unpaired_test}}, \code{\link{t.test}}.
 #' @export 
 #' @template etc
 #' @template sr
+#' @template ref-upsilon
 #' @rdname sr_test
-#' @references 
-#'
-#' Ghosh, B. K. "On the Distribution of the Difference of Two t-Variables."
-#' Journal of the American Statistical Association 70, no 350 (1975): 463--467.
-#' \url{http://www.jstor.org/stable/2285841}
-#'
 #' @examples 
 #' # should reject null
 #' x <- sr_test(rnorm(1000,mean=0.5,sd=0.1),zeta=2,ope=1,alternative="greater")
@@ -332,13 +328,14 @@ sr_equality_test <- function(X,type=c("chisq","F","t"),
 #' @export
 sr_test <- function(x,y=NULL,alternative=c("two.sided","less","greater"),
 										zeta=0,ope=1,paired=FALSE,conf.level=0.95) {
-	# all this stolen from t.test.default:
+	# much of this stolen from t.test.default:
 	alternative <- match.arg(alternative)
-	if (is.sr(x)) {
-		retv <- .sr_test_on_sr(z=x,alternative=alternative,
-													 zeta=zeta,conf.level=conf.level)
-		return(retv)
-	}
+	#if (is.sr(x) && is.null(y)) {
+		#retv <- .sr_test_on_sr(z=x,alternative=alternative,
+													 #zeta=zeta,conf.level=conf.level)
+		#return(retv)
+	#}
+	# much of this stolen from t.test.default:
 	if (!missing(zeta) && (length(zeta) != 1 || is.na(zeta))) 
 		stop("'zeta' must be a single number")
 	if (!missing(conf.level) && (length(conf.level) != 1 || !is.finite(conf.level) || 
@@ -358,13 +355,17 @@ sr_test <- function(x,y=NULL,alternative=c("two.sided","less","greater"),
 	} else {
 		dname <- deparse(substitute(x))
 		if (paired) 
-			stop("'y' is missing for paired test")
+			warning("'y' is missing for paired test; assuming unpaired")
 	}
 
 	if (is.null(y)) {#FOLDUP
 		# delegate
-		subsr <- as.sr(x,c0=0,ope=ope,na.rm=TRUE)
-		retv <- .sr_test_on_sr(subsr,alternative=alternative,zeta=zeta,conf.level=conf.level)
+		if (is.sr(x)) { 
+			srx <- x 
+		} else {
+			srx <- as.sr(x,c0=0,ope=ope,na.rm=TRUE)
+		} 
+		retv <- .sr_test_on_sr(srx,alternative=alternative,zeta=zeta,conf.level=conf.level)
 		retv$data.name <- dname
 		names(retv$estimate) <- paste(c("Sharpe ratio of ",dname),sep=" ",collapse="")
 		return(retv)
@@ -391,36 +392,12 @@ sr_test <- function(x,y=NULL,alternative=c("two.sided","less","greater"),
 			pval <- subtest$p.value
 		} #UNFOLD
 		else {#FOLDUP
-			# via Z-approximation. sigh.
-			srx <- as.sr(x,c0=0)
-			sry <- as.sr(y,c0=0)
-
-			sx <- srx$sr
-			sy <- sry$sr
-			nx <- srx$df
-			ny <- sry$df
-
-			se.x <- se(srx,type="t")
-			se.y <- se(sry,type="t")
-			se.z <- sqrt(se.x^2 + se.y^2)
-			estimate <- sx - sy
-			zeta <- .deannualize(zeta,ope)
-			if (alternative == "less") {
-				pval <- pnorm(estimate, mean = zeta, sd = se.z)
-			}
-			else if (alternative == "greater") {
-				pval <- pnorm(estimate, mean = zeta, sd = se.z, lower.tail = FALSE)
-			}
-			else {
-				pval <- .oneside2two(pnorm(estimate, mean = zeta, sd = se.z))
-			}
-			statistic <- (sx - sy - zeta) / se.z
-			names(statistic) <- "Z"
-			# ??
-			df <- nx + ny - 2 
-
-			estimate <- .annualize(estimate,ope)
-			method <- "unpaired sr-test"
+			srx <- as.sr(x,c0=0,ope=1,na.rm=TRUE)
+			sry <- as.sr(y,c0=0,ope=1,na.rm=TRUE)
+			retval <- sr_unpaired_test(list(srx,sry),c(1,-1),0,
+																 alternative=alternative,
+																 ope=ope,conf.level=conf.level)
+			return(retval)
 		}#UNFOLD
 		names(estimate) <- "difference in Sharpe ratios"
 	}#UNFOLD
@@ -435,7 +412,7 @@ sr_test <- function(x,y=NULL,alternative=c("two.sided","less","greater"),
 	class(retval) <- "htest"
 	return(retval)
 }
-# fuck it, this used to be sr_test.sr, but tired of fighting with roxygen
+# screw it, this used to be sr_test.sr, but tired of fighting with roxygen
 # and R CMD check --as-cran warnings.
 .sr_test_on_sr <- function(z,alternative=c("two.sided","less","greater"),
 											 zeta=0,conf.level=0.95) {
@@ -472,10 +449,184 @@ sr_test <- function(x,y=NULL,alternative=c("two.sided","less","greater"),
 
 	names(df) <- "df"
 	names(zeta) <- "signal-noise ratio"
-	#attr(cint, "conf.level") <- conf.level
+	attr(cint, "conf.level") <- conf.level
 	retval <- list(statistic = statistic, parameter = df,
 								 estimate = estimate, p.value = pval, 
 								 alternative = alternative, null.value = zeta,
+								 method = method, data.name = dname)
+	class(retval) <- "htest"
+	return(retval)
+}
+#' @title test for equation on unpaired Sharpe ratios
+#'
+#' @description 
+#'
+#' Performs hypothesis tests on a single equation on k independent samples of Sharpe ratio.
+#'
+#' @details 
+#'
+#' For \eqn{1 \le j \le k}{1 <= j <= k}, suppose you have \eqn{n_j}{n_j}
+#' observations of a normal random variable with mean \eqn{\mu_j}{mu_j} and
+#' standard deviation \eqn{\sigma_j}{sigma_j}, with all observations
+#' independent. Given constants \eqn{a_j}{a_j} and value \eqn{b}{b}, this
+#' code tests the null hypothesis
+#' \deqn{H_0: \sum_j a_j \frac{\mu_j}{\sigma_j} = b}{H0: sum_j a_j mu_j/sigma_j = b}
+#' against two or one sided alternatives.
+#' 
+#' @usage
+#'
+#' sr_unpaired_test(srs,contrasts=NULL,null.value=0,
+#'   alternative=c("two.sided","less","greater"),
+#'   ope=NULL,conf.level=0.95)
+#'
+#' @param srs a (non-empty) list of objects of class \code{sr}, each containing
+#'  a scalar sample Sharpe estimate. Or a single object of class \code{sr} with
+#'  multiple Sharpe estimates.
+#' @param contrasts an array of the constrasts, the \eqn{a_j}{a_j} values.
+#'  Defaults to \code{c(1,-1,1,...)}.
+#' @param null.value the constant null value, the \eqn{b}{b}.
+#'  Defaults to 0.
+#' @param ope the number of observations per 'epoch'. For convenience of
+#'   interpretation, The Sharpe ratio is typically quoted in 'annualized' 
+#'   units for some epoch, that is, 'per square root epoch', though returns 
+#'   are observed at a frequency of \code{ope} per epoch. 
+#'   The default value is to take the same \code{ope} from the input \code{srs}
+#'   object, if it is unambiguous. Otherwise, it defaults to 1, with a warning
+#'   thrown.
+#' @inheritParams sr_test
+#' @template param-ellipsis
+#' @keywords htest
+#' @return A list with class \code{"htest"} containing the following components:
+#' \item{statistic}{\code{NULL} here.}
+#' \item{parameter}{a list of upsilon parameters.}
+#' \item{p.value}{the p-value for the test.}
+#' \item{conf.int}{a confidence interval appropriate to the specified alternative hypothesis.}
+#' \item{estimate}{the estimated equation value, just the weighted sum of the sample Sharpe ratios. Annualized}
+#' \item{null.value}{the specified hypothesized value of the sum of Sharpes.}
+#' \item{alternative}{a character string describing the alternative hypothesis.}
+#' \item{method}{a character string indicating what type of test was performed.}
+#' \item{data.name}{a character string giving the name(s) of the data.}
+#' @seealso \code{\link{sr_equality_test}}, \code{\link{sr_test}}, \code{\link{t.test}}.
+#' @export 
+#' @template etc
+#' @template sr
+#' @template ref-upsilon
+#' @rdname sr_unpaired_test
+#' @examples 
+#' # basic usage
+#' set.seed(as.integer(charToRaw("set the seed")))
+#' # default contrast is 1,-1,1,-1,1,-1
+#' etc <- sr_unpaired_test(as.sr(matrix(rnorm(1000*6,mean=0.02,sd=0.1),ncol=6)))
+#' print(etc)
+#'
+#' etc <- sr_unpaired_test(as.sr(matrix(rnorm(1000*4,mean=0.0005,sd=0.01),ncol=4)),
+#'   alternative='greater')
+#' print(etc)
+#'
+#' etc <- sr_unpaired_test(as.sr(matrix(rnorm(1000*4,mean=0.0005,sd=0.01),ncol=4)),
+#'   contrasts=c(1,1,1,1),null.value=-0.1,alternative='greater')
+#' print(etc)
+#'
+#' inp <- list(as.sr(rnorm(500)),as.sr(runif(200)-0.5),
+#'             as.sr(rnorm(30)),as.sr(rnorm(100)))
+#' etc <- sr_unpaired_test(inp)
+#'
+#' inp <- list(as.sr(rnorm(500)),as.sr(rnorm(100,mean=0.2,sd=1)))
+#' etc <- sr_unpaired_test(inp,contrasts=c(1,1),null.value=0.2)
+#' etc$conf.int
+#'
+#' @export
+sr_unpaired_test <- function(srs,contrasts=NULL,null.value=0,alternative=c("two.sided","less","greater"),
+														 ope=NULL,conf.level=0.95) {
+	# much of this stolen from t.test.default:
+	alternative <- match.arg(alternative)
+	if (!missing(null.value) && (length(null.value) != 1 || is.na(null.value))) 
+		stop("'null.value' must be a single number")
+	if (!missing(conf.level) && (length(conf.level) != 1 || !is.finite(conf.level) || 
+		conf.level < 0 || conf.level > 1)) 
+		stop("'conf.level' must be a single number between 0 and 1")
+	dname <- deparse(substitute(srs))
+
+	stopifnot(is.sr(srs) || (is.list(srs) && all(unlist(lapply(srs,is.sr)))))
+	listof <- is.sr(srs[[1]])
+	if (listof) {
+		nterm <- length(srs)
+		#should be a better way to do this:
+		vals.sr <- unlist(lapply(srs,function(x) { x$sr }))
+		vals.rescal <- unlist(lapply(srs,function(x) { x$rescal }))
+		vals.df <- unlist(lapply(srs,function(x) { x$df }))
+		vals.ope <- unlist(lapply(srs,function(x) { x$ope }))
+	} else {
+		nterm <- length(srs$sr)
+		# 2FIX: possibly recycle these out to common length..
+		vals.sr <- srs$sr
+		vals.rescal <- srs$rescal
+		vals.df <- srs$df 
+		vals.ope <- srs$ope
+	}
+	if (is.null(contrasts)) { contrasts <- (-1)^(1 + seq_len(nterm)) }
+	stopifnot(nterm == length(contrasts))
+
+	# get rid of matrix, vector, etc:
+	contrasts <- c(contrasts)
+	vals.sr <- c(vals.sr)
+	vals.ope <- c(vals.ope)
+
+	# guess ope
+	if (is.null(ope)) {
+		uni.ope <- unique(vals.ope)
+		if (length(uni.ope) == 1) {
+			ope <- uni.ope
+		} else {
+			warning("ambiguous ope, guessing 1")
+			ope <- 1.0
+		}
+	}
+
+	# nb. the Sharpe is tstat * sqrt(ope) * rescal
+	# deannualize
+	vals.sr.de <- .deannualize(vals.sr,vals.ope)
+	conval <- 1 / sqrt(sum((vals.rescal * contrasts) ^ 2))
+
+	ups.t <- conval * (contrasts * vals.sr)
+	ups.df <- c(vals.df)
+	ups.val <- conval * null.value
+	
+	#2FIX: lower tail here?
+	less.lt <- FALSE
+	if (alternative == "less") {
+		pval <- sadists::pupsilon(ups.val,df=ups.df,t=ups.t,lower.tail=less.lt)
+		ciq <- c(0.0,conf.level)
+	}
+	else if (alternative == "greater") {
+		pval <- sadists::pupsilon(ups.val,df=ups.df,t=ups.t,lower.tail=! less.lt)
+		ciq <- c(1.0-conf.level,1.0)
+	}
+	else {
+		pval <- .oneside2two(sadists::pupsilon(ups.val,df=ups.df,t=ups.t,lower.tail=less.lt))
+		ciq <- 0.5 * (1 + conf.level * c(-1.0,1.0))
+	}
+	# figure out cis
+	cint <- sadists::qupsilon(ciq,df=ups.df,t=ups.t)
+	# convert back
+	cint <- cint / conval
+	cint <- .annualize(cint,ope)
+	attr(cint, "conf.level") <- conf.level
+
+	statistic <- NULL 
+	#names(statistic) <- "null"
+	names(null.value) <- "weighted sum of signal-noise ratios"
+
+	estimate <- sum(contrasts * vals.sr)
+	estimate <- .annualize(estimate,ope)
+	method <- "unpaired k-sample sr-test"
+	names(estimate) <- "equation on Sharpe ratios"
+
+	# 2FIX:
+	names(ups.df) <- "df"
+	retval <- list(statistic = statistic, parameter = ups.df,
+								 estimate = estimate, p.value = pval, 
+								 alternative = alternative, null.value = null.value, conf.int = cint,
 								 method = method, data.name = dname)
 	class(retval) <- "htest"
 	return(retval)
@@ -706,36 +857,36 @@ sropt_test <- function(X,alternative=c("greater","two.sided","less"),
 
 # power of tests:#FOLDUP
 
-# 2FIX: should this be expanded in its own right?
-power.T2.test <- function(df1=NULL,df2=NULL,ncp=NULL,sig.level=0.05,power=NULL) {
-	# stolen from power.anova.test
-	if (sum(sapply(list(df1, df2, ncp, power, sig.level), is.null)) != 1) 
-		stop("exactly one of 'df1', 'df2', 'ncp', 'power', and 'sig.level' must be NULL")
-	if (!is.null(sig.level) && !is.numeric(sig.level) || any(0 > 
-		sig.level | sig.level > 1)) 
-		stop("'sig.level' must be numeric in [0, 1]")
-	p.body <- quote({
-		delta2 <- df2 * ncp
-		pT2(qT2(sig.level, df1, df2, lower.tail = FALSE), df1, df2, delta2, lower.tail = FALSE)
-	})
-	if (is.null(power)) 
-		power <- eval(p.body)
-	else if (is.null(df1)) 
-		df1 <- uniroot(function(df1) eval(p.body) - power, c(1, 3e+03))$root
-	else if (is.null(df2)) 
-		df2 <- uniroot(function(df2) eval(p.body) - power, c(3, 1e+06))$root
-	else if (is.null(ncp))
-		ncp <- uniroot(function(ncp) eval(p.body) - power, c(0, 3e+01))$root
-	else if (is.null(sig.level)) 
-		sig.level <- uniroot(function(sig.level) eval(p.body) - power, c(1e-10, 1 - 1e-10))$root
-	else stop("internal error")
-	NOTE <- "one sided test"
-	METHOD <- "Hotelling test"
-	retval <- structure(list(df1 = df1, df2 = df2, ncp = ncp, delta2 = df2 * ncp,
-								 sig.level = sig.level, power = power, 
-								 note = NOTE, method = METHOD), class = "power.htest")
-	return(retval)
-}
+## this could live on its own, but no longer belongs here.
+#power.T2.test <- function(df1=NULL,df2=NULL,ncp=NULL,sig.level=0.05,power=NULL) {
+	## stolen from power.anova.test
+	#if (sum(sapply(list(df1, df2, ncp, power, sig.level), is.null)) != 1) 
+		#stop("exactly one of 'df1', 'df2', 'ncp', 'power', and 'sig.level' must be NULL")
+	#if (!is.null(sig.level) && !is.numeric(sig.level) || any(0 > 
+		#sig.level | sig.level > 1)) 
+		#stop("'sig.level' must be numeric in [0, 1]")
+	#p.body <- quote({
+		#delta2 <- df2 * ncp
+		#pT2(qT2(sig.level, df1, df2, lower.tail = FALSE), df1, df2, delta2, lower.tail = FALSE)
+	#})
+	#if (is.null(power)) 
+		#power <- eval(p.body)
+	#else if (is.null(df1)) 
+		#df1 <- uniroot(function(df1) eval(p.body) - power, c(1, 3e+03))$root
+	#else if (is.null(df2)) 
+		#df2 <- uniroot(function(df2) eval(p.body) - power, c(3, 1e+06))$root
+	#else if (is.null(ncp))
+		#ncp <- uniroot(function(ncp) eval(p.body) - power, c(0, 3e+01))$root
+	#else if (is.null(sig.level)) 
+		#sig.level <- uniroot(function(sig.level) eval(p.body) - power, c(1e-10, 1 - 1e-10))$root
+	#else stop("internal error")
+	#NOTE <- "one sided test"
+	#METHOD <- "Hotelling test"
+	#retval <- structure(list(df1 = df1, df2 = df2, ncp = ncp, delta2 = df2 * ncp,
+								 #sig.level = sig.level, power = power, 
+								 #note = NOTE, method = METHOD), class = "power.htest")
+	#return(retval)
+#}
 #' @title Power calculations for optimal Sharpe ratio tests
 #'
 #' @description 
