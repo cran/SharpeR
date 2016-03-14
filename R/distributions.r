@@ -191,6 +191,7 @@ rrt <- function(n, df, K, rho = 0) {
 #' \code{qsr} gives the quantile function, and \code{rsr} generates random deviates.
 #'
 #' Invalid arguments will result in return value \code{NaN} with a warning.
+#' @rdname dsr
 #' @aliases psr qsr rsr
 #' @seealso t-distribution functions, \code{\link{dt}, \link{pt}, \link{qt}, \link{rt}}
 #' @note
@@ -635,8 +636,6 @@ rsropt <- function(n, df1, df2, zeta.s, ope, drag = 0, ...) {
 #' @param log.p logical; if TRUE, probabilities p are given as \eqn{\mbox{log}(p)}{log(p)}.
 #' @param lower.tail logical; if TRUE (default), probabilities are
 #'        \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.
-#' @inheritParams qsr
-#' @inheritParams psr
 #' @inheritParams dsr
 #' @keywords distribution 
 #' @return \code{dlambdap} gives the density, \code{plambdap} gives the distribution function,
@@ -688,7 +687,7 @@ plambdap <- function(q,df,tstat,lower.tail=TRUE,log.p=FALSE) {
 }
 
 # create a scalar function that we later vectorize. 
-.qlambdap <- function(p,df,tstat,lower.tail=TRUE,log.p=FALSE) {
+.qlambdap <- function(p,df,tstat,lower.tail=TRUE,log.p=FALSE) { # nocov start
 	if (!log.p) {
 		if (p == 1)
 			return(ifelse(lower.tail,Inf,-Inf))
@@ -728,7 +727,7 @@ plambdap <- function(q,df,tstat,lower.tail=TRUE,log.p=FALSE) {
 
 	ncp <- uniroot(zerf,c(flo,fhi))
 	return(ncp$root)
-}
+} # nocov end
 #' @export 
 qlambdap <- Vectorize(.qlambdap, 
 											vectorize.args = c("p","df","tstat"),
@@ -753,7 +752,7 @@ rlambdap <- function(n, df, tstat) {
 #' @details
 #' 
 #' Suppose \eqn{z_*}{z*} follows a \emph{Maximal Sharpe ratio} distribution
-#' (see \code{\link{SharpeR}}) for known degrees of freedom, and 
+#' (see \code{\link{SharpeR-package}}) for known degrees of freedom, and 
 #' unknown non-centrality parameter \eqn{\zeta_*}{zeta*}. The 
 #' 'confidence distribution' views \eqn{\zeta_*}{zeta*} as a random
 #' quantity once \eqn{z_*}{z*} is observed. As such, the CDF of
@@ -778,9 +777,7 @@ rlambdap <- function(n, df, tstat) {
 #' @param lb the lower bound for the output of \code{qco_sropt}.
 #' @param ub the upper bound for the output of \code{qco_sropt}.
 #' @inheritParams dsropt
-#' @inheritParams qsr
 #' @inheritParams dsr
-#' @inheritParams psr
 #' @keywords distribution 
 #' @return \code{pco_sropt} gives the distribution function, and
 #' \code{qco_sropt} gives the quantile function.
@@ -861,7 +858,7 @@ pco_sropt <- function(q,df1,df2,z.s,ope=1,lower.tail=TRUE,log.p=FALSE) {
 # if p < lp we return lb;
 # if q >= up, we return ub;
 .qco_sropt <- function(p,df1,df2,z.s,ope,lower.tail=TRUE,log.p=FALSE,
-												lb=0,ub=Inf) {
+												lb=0,ub=Inf) { # nocov start
 	if ((lb > ub) || (is.infinite(lb)) || (min(lb,ub) < 0))
 		stop("nonsensical lb and/or ub")
 
@@ -911,7 +908,7 @@ pco_sropt <- function(q,df1,df2,z.s,ope=1,lower.tail=TRUE,log.p=FALSE) {
 								 f.lower=flb,f.upper=fub)
 	retv <- ifelse(missing(ope),ncp$root,.annualize(ncp$root,ope))
 	return(retv)
-}
+} # nocov end
 #' @export 
 qco_sropt <- Vectorize(.qco_sropt,
 											vectorize.args = c("p","df1","df2","z.s"),
@@ -996,7 +993,7 @@ pco_f <- function(q,df1,df2,x,lower.tail=TRUE,log.p=FALSE) {
 # if p < lp we return lb;
 # if q >= up, we return ub;
 .qco_f <- function(p,df1,df2,x,lower.tail=TRUE,log.p=FALSE,
-												lb=0,ub=Inf) {
+												lb=0,ub=Inf) { # nocov start
 	if ((lb > ub) || (is.infinite(lb)) || (min(lb,ub) < 0))
 		stop("nonsensical lb and/or ub")
 
@@ -1043,7 +1040,7 @@ pco_f <- function(q,df1,df2,x,lower.tail=TRUE,log.p=FALSE) {
 								 f.lower=flb,f.upper=fub)
 	retv <- ncp$root
 	return(retv)
-}
+} # nocov end
 #  ' @export 
 qco_f <- Vectorize(.qco_f,
 									 vectorize.args = c("p","df1","df2","x"),

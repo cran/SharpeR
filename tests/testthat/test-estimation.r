@@ -106,6 +106,9 @@ test_that("basic sropt functionality",{
 	z2 <- inference(mysr, type="MLE")
 	z3 <- inference(mysr, type="unbiased")
 
+	sricv <- sric(mysr)
+	sricv <- sric(dummy)
+
 	# via xts
 	if (require(xts)) {
 		xxts <- xts(x,order.by=as.Date(1:(dim(x)[1]),origin="1990-01-01"))
@@ -146,6 +149,18 @@ test_that("basic del_sropt functionality",{
 		#dummy <- reannualize(mysr,new.ope=2)
 	}
 
+	expect_true(TRUE)
+})
+test_that("basic sr_vcov functionality",{
+	set.char.seed("de096679-85cc-438b-8335-96a9940a9021")
+	for (p in c(1:3)) {
+		X <- matrix(rnorm(1000*p,mean=3e-4),ncol=p)
+		S <- sr_vcov(X)
+	}
+	X <- rnorm(1000)
+	S <- sr_vcov(X)
+
+	# sentinel:
 	expect_true(TRUE)
 })
 #UNFOLD
@@ -197,8 +212,23 @@ test_that("confint.sropt coverage",{#FOLDUP
 	}
 })#UNFOLD
 #UNFOLD
-context("estimation functions: prediction coverage")#FOLDUP
-test_that("predict runs at all",{#FOLDUP
+context("estimation functions: prediction intervals")#FOLDUP
+test_that("predint right output",{#FOLDUP
+	set.char.seed("0919609e-4e99-42f2-b04c-89e2d2faaa4f")
+
+	for (nasset in c(1,2,4,8)) {
+		x <- matrix(rnorm(100*nasset),ncol=nasset)
+		srx <- as.sr(x)
+		aci <- predint(srx,oosdf=500)
+		expect_equal(nrow(aci),nasset)
+		expect_equal(ncol(aci),2)
+		expect_true(is.matrix(aci))
+	}
+
+	# sentinel
+	expect_true(TRUE)
+})#UNFOLD
+test_that("predint runs at all",{#FOLDUP
 	set.char.seed("080c6f73-834e-4d10-a6fa-4b27dc266b24")
 
 	ngen <- ceiling(THOROUGHNESS * 32)
@@ -217,9 +247,35 @@ test_that("predict runs at all",{#FOLDUP
 			for (nominal.coverage in c(0.90,0.95)) {
 				aci <- predint(x,oosdf=oosn-1,ope=1,level=nominal.coverage)
 				aci2 <- predint(as.sr(x),oosdf=oosn-1,ope=1,level=nominal.coverage)
+				# no ope:
+				noaci <- predint(x,oosdf=oosn-1,level=nominal.coverage)
 			}
+			# corner cases:
+			iinf <- predint(x,oosdf=oosn-1,level.lo=0,level.hi=1)
+			expect_true(all(is.infinite(iinf)))
 		}
 	}
+	# sentinel
+	expect_true(TRUE)
+})#UNFOLD
+test_that("predint not fooled by annualization",{#FOLDUP
+	set.char.seed("94cbb2a6-b497-48d4-9139-e987364f8a0f")
+
+	isn <- 200
+	oosn <- 100
+	ope <- 253
+	sg <- 0.013
+	zeta <- 1
+	x <- rnorm(isn,mean=(zeta/sqrt(ope))*sg,sd=sg)
+	srx1 <- as.sr(x,ope=1)
+	srx2 <- as.sr(x,ope=ope)
+	nominal.coverage <- 0.90
+	aci1 <- predint(srx1,oosdf=oosn-1,ope=1,level=nominal.coverage)
+	aci2 <- predint(srx2,oosdf=oosn-1,ope=1,level=nominal.coverage)
+	errs <- unlist(aci1) - unlist(aci2)
+
+	expect_less_than(max(abs(errs)),1e-4)
+
 	# sentinel
 	expect_true(TRUE)
 })#UNFOLD

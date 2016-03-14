@@ -64,6 +64,8 @@
 #' sr_vcov(X,vcov.func=vcov,ope=1)
 #'
 #' @param X an \eqn{n \times p}{n x p} matrix of observed returns.
+#' It not a matrix, but a numeric of length \eqn{n}{n}, then it is
+#' coerced into a \eqn{n \times 1}{n x 1} matrix.
 #' @param vcov.func a function which takes an object of class \code{lm},
 #' and computes a variance-covariance matrix.
 #' @template param-ope
@@ -101,10 +103,17 @@
 #'	Sigmas <- sr_vcov(Xf,vcov.func=vcovHAC)
 #' }
 #' }
+#' # should run for a vector as well
+#' X <- rnorm(1000)
+#' SS <- sr_vcov(X)
 #'
 sr_vcov <- function(X,vcov.func=vcov,ope=1) {
 	X <- na.omit(X)
 	p <- dim(X)[2]
+	if (is.null(p)) {
+		X <- matrix(X,ncol=1)
+		p <- dim(X)[2]
+	}
 
 	# cat together X and X squared
 	XX2 <- cbind(X,X^2)
@@ -113,8 +122,8 @@ sr_vcov <- function(X,vcov.func=vcov,ope=1) {
 	mm2 <- mod2$coefficients
 
 	# mean of X and X^2
-	m1 <- mm2[1:p]
-	m2 <- mm2[p + (1:p)]
+	m1 <- mm2[1:p,drop=FALSE]
+	m2 <- mm2[p + (1:p),drop=FALSE]
 	# volatility
 	sig2 <- (m2 - m1^2)
 	# the SR:
@@ -125,8 +134,8 @@ sr_vcov <- function(X,vcov.func=vcov,ope=1) {
 
 	# construct D matrix
 	deno <- (sig2)^(3/2)
-	D1 <- diag(m2 / deno)
-	D2 <- diag(-m1 / (2*deno))
+	D1 <- diag(m2 / deno,nrow=p,ncol=p)
+	D2 <- diag(-m1 / (2*deno),nrow=p,ncol=p)
 	Dt <- rbind(D1,D2)
 
 	# Omegahat
@@ -513,49 +522,28 @@ predint <- function(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
 		srx <- as.sr(x,c0=0,ope=1,na.rm=TRUE)
 	}
 	if (is.null(ope)) { ope <- srx$ope }
+	srx <- reannualize(srx,new.ope=1)
 	cols <- mapply(function(sx,dfx,rescalx) {
-		cons <- 1 / sqrt(rescalx^2 + oosrescal^2)
+		ocons <- sqrt(rescalx^2 + oosrescal^2)
 		udf <- c(dfx,oosdf)
-		# eventually this guesswork involving uniroot will be replaced by another distribution
-		# that is similar to the upsilon, but has another chi in the denominator...
-		pfunc <- function(y,lvl) { 
-			ut <- cons * c(sx,-y)
-			retv <- lvl - sadists::pupsilon(0,df=udf,t=ut,lower.tail=TRUE)
-		}
+
 		ci <- lapply(c(level.lo,level.hi),function(lvl) {
 			if ((0 < lvl) && (lvl < 1)) {
-				# this is the only part that needs to be fixed:
-				# how to guess the interval.
-				lwt <- 3
-				alps <- (1/(lwt+1)) * (lwt*lvl + c(0,1))
-				invl <- sx + (1/cons) * qnorm(alps)
-				falps <- unlist(lapply(invl,pfunc,lvl=lvl))
-				itr <- 0
-				while ((prod(sign(falps)) > 0) && (itr < 60)) {
-					alps <- 0.5 * (alps + c(0,1))
-					invl <- sx + (1/cons) * qnorm(alps)
-					falps <- unlist(lapply(invl,pfunc,lvl=lvl))
-					itr <- itr + 1
-				}
-				invl <- sx + (1/cons) * qnorm(0.5 * (lvl + c(0,1)))
-				etc <- uniroot(pfunc,interval=invl,
-											 lower=invl[1],upper=invl[2],
-											 f.lower=falps[1],f.upper=falps[2],lvl=lvl)
-				yval <- .annualize(etc$root,ope)
+				yval <- sadists::qkprime(lvl,v1=udf[1],v2=udf[2],a=sx,b=ocons,order.max=5)
+				yval <- .annualize(yval,ope)
 			} else {
 				yval <- ifelse(lvl >= 1,Inf,-Inf)
 			}
 		})
-		retval <- matrix(ci,nrow=1)
+		retval <- matrix(unlist(ci),nrow=1)
 	},srx$sr,srx$df,srx$rescal)
-	retval <- t(cols)
+	retval <- matrix(t(cols),ncol=2)
 	colnames(retval) <- sapply(c(level.lo,level.hi),function(x) { sprintf("%g %%",100*x) })
 
 	rownames(retval) <- .get_strat_names(srx$sr)
 	retval
 }
 #UNFOLD
-
 
 # point inference on sropt/ncp of F#FOLDUP
 
@@ -566,7 +554,7 @@ predint <- function(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
 }
 
 #MLE of the ncp based on a single F-stat
-.F_ncp_MLE_single <- function(Fs,df1,df2,ub=NULL,lb=0) {
+.F_ncp_MLE_single <- function(Fs,df1,df2,ub=NULL,lb=0) { # nocov start
 	if (Fs <= 1) { return(0.0) }  # Spruill's Thm 3.1, eqn 8
 	max.func <- function(z) { df(Fs,df1,df2,ncp=z,log=TRUE) }
 
@@ -583,7 +571,7 @@ predint <- function(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
 	}
 	ncp.MLE <- optimize(max.func,c(lb,ub),maximum=TRUE)$maximum;
 	return(ncp.MLE)
-}
+} # nocov end
 .F_ncp_MLE <- Vectorize(.F_ncp_MLE_single,
 											vectorize.args = c("Fs","df1","df2"),
 											SIMPLIFY = TRUE)
@@ -760,6 +748,58 @@ inference.del_sropt <- function(z.s,type=c("KRS","MLE","unbiased")) {
 	# 2FIX: drag is being ignored. harumph.
 	retval <- .annualize(sqrt(retval),z.s$ope)
 	return(retval)
+}
+#' @title Sharpe Ratio Information Coefficient
+#'
+#' @description 
+#'
+#' Computes the Sharpe Ratio Information Coefficient of
+#' Paulsen and Soehl, an asymptotically unbiased estimate of
+#' the out-of-sample Sharpe of the in-sample Markowitz portfolio.
+#'
+#' @details 
+#'
+#' Let \eqn{X}{X} be an observed \eqn{T \times k}{T x k} matrix whose
+#' rows are i.i.d. normal. Let \eqn{\mu}{mu} and \eqn{\Sigma}{Sigma} be
+#' the sample mean and sample covariance. The Markowitz portfolio is
+#' \deqn{w = \Sigma^{-1}\mu,}{w = Sigma^-1 mu,}
+#' which has an in-sample Sharpe of 
+#' \eqn{\zeta = \sqrt{\mu^{\top}\Sigma^{-1}\mu}.}{zeta = sqrt(mu' Sigma^-1 mu).}
+#'
+#' The \emph{Sharpe Ratio Information Criterion} is defined as
+#' \deqn{SRIC = \zeta - \frac{k-1}{T\zeta}.}{SRIC = zeta - ((k-1) / (T zeta)).}
+#' The expected value (over draws of \eqn{X}{X} and of future returns)
+#' of the \eqn{SRIC}{SRIC} is equal to the expected value of the out-of-sample
+#' Sharpe of the (in-sample) portfolio \eqn{w}{w} (again, over the same draws.)
+#'
+#' @param z.s an object of type \code{sropt}
+#' @return The Sharpe Ratio Information Coefficient.
+#' @export 
+#' @template etc
+#' @template ref-SRIC
+#' @family sropt Hotelling
+#' @rdname sric
+#' @export sric
+#'
+#' @examples 
+#' # generate some sropts
+#' nfac <- 3
+#' nyr <- 5
+#' ope <- 253
+#' # simulations with no covariance structure.
+#' # under the null:
+#' set.seed(as.integer(charToRaw("fix seed")))
+#' Returns <- matrix(rnorm(ope*nyr*nfac,mean=0,sd=0.0125),ncol=nfac)
+#' asro <- as.sropt(Returns,drag=0,ope=ope)
+#' srv <- sric(asro)
+#'
+sric <- function(z.s) {
+	# deannualize the optimal Sharpe
+	znative <- .deannualize(z.s$sropt,z.s$ope)
+	retv <- znative - (z.s$df1 - 1) / (znative * z.s$df2)
+	# reannualize
+	retv <- .annualize(retv,z.s$ope)
+	retv
 }
 #UNFOLD
 

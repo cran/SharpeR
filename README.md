@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/shabbychef/SharpeR.png)](https://travis-ci.org/shabbychef/SharpeR)
 [![codecov.io](http://codecov.io/github/shabbychef/SharpeR/coverage.svg?branch=master)](http://codecov.io/github/shabbychef/SharpeR?branch=master)
+[![CRAN](http://www.r-pkg.org/badges/version/SharpeR)](http://cran.rstudio.com/package=SharpeR) 
+[![Downloads](http://cranlogs.r-pkg.org/badges/SharpeR?color=brightgreen)](http://www.r-pkg.org/pkg/SharpeR)
 
 A number of utilities for dealing with Sharpe ratio, the Sharpe ratio of the
 Markowitz portfolio, and, in general, overfit of trading strategies based on
@@ -270,7 +272,7 @@ print(coverage)
 ## [1] 0.95
 ```
 
-![nominal coverage](github_extra/figure/borat_coverage.jpg)
+![nominal coverage](github_extra/static/borat_coverage.jpg)
 
 For a more complicated example, consider the 'Sharpe' under the attribution
 model. Here we download the _daily_ data of the three Fama French factors, then
@@ -327,10 +329,46 @@ print(coverage)
 ## [1] 0.8
 ```
 
+![no nominal coverage](github_extra/static/yuno.jpg)
+
 It is not clear if non-normality or omitted variable bias (or broken code!) 
 is to blame for the apparent conservatism of the prediction intervals in this case.
+We can check by simply shuffling the monthly returns data and repeating the
+experiment:
 
-![no nominal coverage](github_extra/figure/yuno.jpg)
+
+```r
+# shuffle the returns data by row
+set.seed(1234)
+shufff <- as.data.frame(fff.xts)
+shufff <- shufff[sample.int(nrow(shufff)), ]
+
+okvals <- lapply(unique(yrno), function(yr) {
+    isi <- (yrno == yr) & !is.q4
+    oosi <- (yrno == yr) & is.q4
+    mod.is <- lm(SMB ~ Mkt + HML, data = shufff[isi, 
+        ])
+    mod.oos <- lm(SMB ~ Mkt + HML, data = shufff[oosi, 
+        ])
+    sr.is <- as.sr(mod.is)
+    sr.oos <- as.sr(mod.oos)
+    # compute prediction intervals
+    pint <- predint(sr.is, oosdf = sr.oos$df, oosrescal = sr.oos$rescal, 
+        ope = sr.oos$ope)
+    is.ok <- (pint[, 1] <= sr.oos$sr) & (sr.oos$sr <= 
+        pint[, 2])
+    is.ok
+})
+coverage <- mean(unlist(okvals))
+print(coverage)
+```
+
+```
+## [1] 0.95
+```
+
+Of course, this could be a 'lucky seed', but one suspects that non-normality is _not_
+the issue, rather there is some autocorrelation of (idiosyncratic) returns (or volatility!).
 
 ## Inference on the Markowitz Portfolio
 
