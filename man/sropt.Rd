@@ -4,7 +4,7 @@
 \alias{sropt}
 \title{Create an 'sropt' object.}
 \usage{
-sropt(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL)
+sropt(z.s, df1, df2, drag = 0, ope = 1, epoch = "yr", T2 = NULL)
 }
 \arguments{
 \item{z.s}{an optimum Sharpe ratio statistic.}
@@ -82,9 +82,6 @@ rvs <- rsropt(5,df1,df2,zeta.s,ope,drag=0)
 roll.own <- sropt(z.s=rvs,df1,df2,drag=0,ope=ope)
 print(roll.own)
 }
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
-}
 \seealso{
 \code{\link{reannualize}}
 
@@ -96,5 +93,7 @@ Other sropt: \code{\link{as.sropt}},
   \code{\link{power.sropt_test}},
   \code{\link{reannualize}}, \code{\link{sropt_test}}
 }
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
+}
 \keyword{univar}
-

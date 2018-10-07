@@ -6,7 +6,7 @@
 \alias{as.del_sropt.xts}
 \title{Compute the Sharpe ratio of a hedged Markowitz portfolio.}
 \usage{
-as.del_sropt(X,G,drag=0,ope=1,epoch="yr")
+as.del_sropt(X, G, drag = 0, ope = 1, epoch = "yr")
 
 \method{as.del_sropt}{default}(X, G, drag = 0, ope = 1, epoch = "yr")
 
@@ -89,16 +89,15 @@ if (require(quantmod)) {
     # chomp first NA!
     lrets[-1,]
   }
-  get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
+  get.rets <- function(syms,...) { 
+	some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
+ }
   some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
   # hedge out SPY
   G <- diag(dim(some.rets)[2])[5,]
   asro <- as.del_sropt(some.rets,G)
 }
 }
-}
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
 }
 \seealso{
 \code{\link{del_sropt}}, \code{\link{sropt}}, 
@@ -107,5 +106,7 @@ Steven E. Pav \email{shabbychef@gmail.com}
 Other del_sropt: \code{\link{del_sropt}},
   \code{\link{is.del_sropt}}
 }
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
+}
 \keyword{univar}
-

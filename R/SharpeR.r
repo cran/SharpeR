@@ -161,7 +161,7 @@
 #'
 #' Britten-Jones, Mark. "The Sampling Error in Estimates of Mean-Variance 
 #' Efficient Portfolio Weights." The Journal of Finance 54, no. 2 (1999):
-#' 655--671. \url{http://www.jstor.org/stable/2697722}
+#' 655--671. \url{https://www.jstor.org/stable/2697722}
 #'
 #' Silvapulle, Mervyn. J. "A Hotelling's T2-type statistic for testing against 
 #' one-sided hypotheses." Journal of Multivariate Analysis 55, no. 2 (1995):
@@ -199,8 +199,18 @@ NULL
 #'
 #' News for package 'SharpeR'
 #'
-#' \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
+#' \newcommand{\CRANpkg}{\href{https://cran.r-project.org/package=#1}{\pkg{#1}}}
 #' \newcommand{\SharpeR}{\CRANpkg{SharpeR}}
+#'
+#' @section Changes in \SharpeR{} Version 1.2.0 (2016-10-07) :
+#' \itemize{
+#' \item move github figures to location CRAN understands
+#' \item be smarter about S3 classes: do not redefine summary and print.
+#' \item add bias and variance from Bao (2009).
+#' \item support estimation of higher order moments in \code{as.sr}, 
+#' and expands methods for se and confidence interval computations.
+#' \item incorporate higher order methods into one sample sr tests.
+#' }
 #'
 #' @section Changes in \SharpeR{} Version 1.1.0 (2016-03-14) :
 #' \itemize{

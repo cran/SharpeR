@@ -6,7 +6,7 @@
 \alias{as.sropt.xts}
 \title{Compute the Sharpe ratio of the Markowitz portfolio.}
 \usage{
-as.sropt(X,drag=0,ope=1,epoch="yr")
+as.sropt(X, drag = 0, ope = 1, epoch = "yr")
 
 \method{as.sropt}{default}(X, drag = 0, ope = 1, epoch = "yr")
 
@@ -103,14 +103,13 @@ if (require(quantmod)) {
     # chomp first NA!
     lrets[-1,]
   }
-  get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
+  get.rets <- function(syms,...) { 
+	some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
+ }
   some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
   asro <- as.sropt(some.rets)
 }
 }
-}
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
 }
 \seealso{
 \code{\link{sropt}}, \code{\link{sr}}, sropt-distribution functions, 
@@ -122,5 +121,7 @@ Other sropt: \code{\link{confint.sr}},
   \code{\link{reannualize}}, \code{\link{sropt_test}},
   \code{\link{sropt}}
 }
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
+}
 \keyword{univar}
-

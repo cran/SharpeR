@@ -651,7 +651,8 @@ rsropt <- function(n, df1, df2, zeta.s, ope, drag = 0, ...) {
 #'
 #' Lecoutre, Bruno. "Another look at confidence intervals for the noncentral t distribution." 
 #' Journal of Modern Applied Statistical Methods 6, no. 1 (2007): 107--116.
-#' \url{http://www.univ-rouen.fr/LMRS/Persopage/Lecoutre/telechargements/Lecoutre_Another_look-JMSAM2007_6(1).pdf}
+#' \url{http://eris62.eu/telechargements/Lecoutre_Another_look-JMSAM2007_6(1).pdf}
+#'
 #'
 #' Lecoutre, Bruno. "Two useful distributions for Bayesian predictive procedures under normal models."
 #' Journal of Statistical Planning and Inference 79  (1999): 93--105. 
@@ -687,7 +688,7 @@ plambdap <- function(q,df,tstat,lower.tail=TRUE,log.p=FALSE) {
 }
 
 # create a scalar function that we later vectorize. 
-.qlambdap <- function(p,df,tstat,lower.tail=TRUE,log.p=FALSE) { # nocov start
+.qlambdap <- function(p,df,tstat,lower.tail=TRUE,log.p=FALSE) { 
 	if (!log.p) {
 		if (p == 1)
 			return(ifelse(lower.tail,Inf,-Inf))
@@ -727,7 +728,7 @@ plambdap <- function(q,df,tstat,lower.tail=TRUE,log.p=FALSE) {
 
 	ncp <- uniroot(zerf,c(flo,fhi))
 	return(ncp$root)
-} # nocov end
+} 
 #' @export 
 qlambdap <- Vectorize(.qlambdap, 
 											vectorize.args = c("p","df","tstat"),
@@ -858,7 +859,7 @@ pco_sropt <- function(q,df1,df2,z.s,ope=1,lower.tail=TRUE,log.p=FALSE) {
 # if p < lp we return lb;
 # if q >= up, we return ub;
 .qco_sropt <- function(p,df1,df2,z.s,ope,lower.tail=TRUE,log.p=FALSE,
-												lb=0,ub=Inf) { # nocov start
+												lb=0,ub=Inf) { 
 	if ((lb > ub) || (is.infinite(lb)) || (min(lb,ub) < 0))
 		stop("nonsensical lb and/or ub")
 
@@ -908,7 +909,7 @@ pco_sropt <- function(q,df1,df2,z.s,ope=1,lower.tail=TRUE,log.p=FALSE) {
 								 f.lower=flb,f.upper=fub)
 	retv <- ifelse(missing(ope),ncp$root,.annualize(ncp$root,ope))
 	return(retv)
-} # nocov end
+} 
 #' @export 
 qco_sropt <- Vectorize(.qco_sropt,
 											vectorize.args = c("p","df1","df2","z.s"),
@@ -993,7 +994,7 @@ pco_f <- function(q,df1,df2,x,lower.tail=TRUE,log.p=FALSE) {
 # if p < lp we return lb;
 # if q >= up, we return ub;
 .qco_f <- function(p,df1,df2,x,lower.tail=TRUE,log.p=FALSE,
-												lb=0,ub=Inf) { # nocov start
+												lb=0,ub=Inf) { 
 	if ((lb > ub) || (is.infinite(lb)) || (min(lb,ub) < 0))
 		stop("nonsensical lb and/or ub")
 
@@ -1040,7 +1041,7 @@ pco_f <- function(q,df1,df2,x,lower.tail=TRUE,log.p=FALSE) {
 								 f.lower=flb,f.upper=fub)
 	retv <- ncp$root
 	return(retv)
-} # nocov end
+} 
 #  ' @export 
 qco_f <- Vectorize(.qco_f,
 									 vectorize.args = c("p","df1","df2","x"),

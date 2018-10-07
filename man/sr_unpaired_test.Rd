@@ -4,9 +4,9 @@
 \alias{sr_unpaired_test}
 \title{test for equation on unpaired Sharpe ratios}
 \usage{
-sr_unpaired_test(srs,contrasts=NULL,null.value=0,
-  alternative=c("two.sided","less","greater"),
-  ope=NULL,conf.level=0.95)
+sr_unpaired_test(srs, contrasts = NULL, null.value = 0,
+  alternative = c("two.sided", "less", "greater"), ope = NULL,
+  conf.level = 0.95)
 }
 \arguments{
 \item{srs}{a (non-empty) list of objects of class \code{sr}, each containing
@@ -62,6 +62,12 @@ code tests the null hypothesis
 \deqn{H_0: \sum_j a_j \frac{\mu_j}{\sigma_j} = b}{H0: sum_j a_j mu_j/sigma_j = b}
 against two or one sided alternatives.
 }
+\note{
+This code is based on the \sQuote{upsilon} code from 
+\code{sadists}, which may be inaccurate for a large number of series.
+Take caution when applying this test. File a bug report if you are
+negatively impacted.
+}
 \examples{
 # basic usage
 set.seed(as.integer(charToRaw("set the seed")))
@@ -86,9 +92,6 @@ etc <- sr_unpaired_test(inp,contrasts=c(1,1),null.value=0.2)
 etc$conf.int
 
 }
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
-}
 \references{
 Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-138.
 \url{http://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
@@ -107,7 +110,9 @@ Other sr: \code{\link{as.sr}}, \code{\link{confint.sr}},
   \code{\link{reannualize}}, \code{\link{se}},
   \code{\link{sr_equality_test}}, \code{\link{sr_test}},
   \code{\link{sr_vcov}}, \code{\link{sr}},
-  \code{\link{summary}}
+  \code{\link{summary.sr}}
+}
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
 }
 \keyword{htest}
-

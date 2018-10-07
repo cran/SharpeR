@@ -2,29 +2,34 @@
 % Please edit documentation in R/sr.r
 \name{as.sr}
 \alias{as.sr}
-\alias{as.sr.data.frame}
 \alias{as.sr.default}
-\alias{as.sr.lm}
 \alias{as.sr.matrix}
-\alias{as.sr.timeSeries}
+\alias{as.sr.data.frame}
+\alias{as.sr.lm}
 \alias{as.sr.xts}
+\alias{as.sr.timeSeries}
 \title{Compute the Sharpe ratio.}
 \usage{
-as.sr(x,c0=0,ope=1,na.rm=FALSE,epoch="yr")
+as.sr(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
+  higher_order = FALSE)
 
-\method{as.sr}{default}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr")
+\method{as.sr}{default}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
+  higher_order = FALSE)
 
-\method{as.sr}{matrix}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr")
+\method{as.sr}{matrix}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
+  higher_order = FALSE)
 
 \method{as.sr}{data.frame}(x, c0 = 0, ope = 1, na.rm = FALSE,
-  epoch = "yr")
+  epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{lm}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr")
+\method{as.sr}{lm}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
+  higher_order = FALSE)
 
-\method{as.sr}{xts}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr")
+\method{as.sr}{xts}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
+  higher_order = FALSE)
 
 \method{as.sr}{timeSeries}(x, c0 = 0, ope = 1, na.rm = FALSE,
-  epoch = "yr")
+  epoch = "yr", higher_order = FALSE)
 }
 \arguments{
 \item{x}{vector of returns, or object of class \code{data.frame}, \code{xts},
@@ -46,6 +51,10 @@ will be made.}
 
 \item{epoch}{the string representation of the 'epoch', defaulting
 to 'yr'.}
+
+\item{higher_order}{a Boolean. If true, we compute 
+cumulants of the returns to leverage higher order accuracy formulae
+when possible.}
 }
 \value{
 a list containing the following components:
@@ -118,9 +127,6 @@ colnames(my.returns) <- c("strat a","strat b","strat c","strat d")
 asr <- as.sr(my.returns)
   
 }
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
-}
 \references{
 Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-138.
 \url{http://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
@@ -140,7 +146,9 @@ Other sr: \code{\link{confint.sr}}, \code{\link{dsr}},
   \code{\link{se}}, \code{\link{sr_equality_test}},
   \code{\link{sr_test}}, \code{\link{sr_unpaired_test}},
   \code{\link{sr_vcov}}, \code{\link{sr}},
-  \code{\link{summary}}
+  \code{\link{summary.sr}}
+}
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
 }
 \keyword{univar}
-

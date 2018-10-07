@@ -31,6 +31,8 @@
 #' @include distributions.r
 #' @include estimation.r
 
+setOldClass(c('sr','sropt','del_sropt','summary.sr','summary.sropt'))
+
 ########################################################################
 # Sharpe Ratio#FOLDUP
 
@@ -61,10 +63,6 @@
 #' rather \code{\link{as.sr}} should be called instead to compute the
 #' Sharpe ratio.
 #'
-#' @usage
-#'
-#' sr(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr") 
-#'
 #' @param sr a Sharpe ratio statistic.
 #' @param df the degrees of freedom of the equivalent t-statistic.
 #' @param c0 the 'risk-free' or 'disastrous' rate of return. this is
@@ -74,6 +72,7 @@
 #' @param rescal the rescaling parameter.
 #' @param epoch the string representation of the 'epoch', defaulting
 #'        to 'yr'.
+#' @template param-cumulants
 #' @keywords univar 
 #' @return a list cast to class \code{sr}.
 #' @seealso \code{\link{as.sr}}
@@ -96,9 +95,10 @@
 #' rvs <- rsr(5,n,zeta,ope=ope)
 #' roll.own <- sr(sr=rvs,df=n-1,ope=ope,rescal=sqrt(1/n))
 #'
-sr <- function(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr") {
+sr <- function(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr",cumulants=NULL) {
 	retval <- list(sr = sr,df = df,c0 = c0,
-								 ope = ope,rescal = rescal,epoch = epoch)
+								 ope = ope,rescal = rescal,epoch = epoch,
+								 cumulants=cumulants)
 	class(retval) <- "sr"
 	return(retval)
 }
@@ -139,10 +139,6 @@ sr <- function(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr") {
 #' attempts to infer the observations per year, without regard to 
 #' the name of the \code{epoch} given.
 #'
-#' @usage
-#'
-#' as.sr(x,c0=0,ope=1,na.rm=FALSE,epoch="yr")
-#'
 #' @param x vector of returns, or object of class \code{data.frame}, \code{xts},
 #'        or \code{lm}.
 #' @param c0 the 'risk-free' or 'disastrous' rate of return. this is
@@ -152,6 +148,9 @@ sr <- function(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr") {
 #' @param na.rm logical.  Should missing values be removed?
 #' @param epoch the string representation of the 'epoch', defaulting
 #'        to 'yr'.
+#' @param higher_order  a Boolean. If true, we compute 
+#'        cumulants of the returns to leverage higher order accuracy formulae
+#'        when possible.
 #' @keywords univar 
 #' @return a list containing the following components:
 #' \describe{
@@ -206,10 +205,10 @@ sr <- function(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr") {
 #' colnames(my.returns) <- c("strat a","strat b","strat c","strat d")
 #' asr <- as.sr(my.returns)
 #'   
-as.sr <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
+as.sr <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
 	UseMethod("as.sr", x)
 }
-.as.sr.unified <- function(x,mu,sigma,c0,ope,na.rm,epoch) {
+.as.sr.unified <- function(x,mu,sigma,c0,ope,na.rm,epoch,cumulants=NULL) {
 	z <- .compute_sr(mu,c0,sigma,ope)
 	dim(z) <- c(length(mu),1)
 
@@ -239,73 +238,93 @@ as.sr <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
 	
 	# n.b. sr$df is n-1
 	retval <- sr(z,df=df-1,c0=c0,ope=ope,
-							 rescal=1/sqrt(df),epoch=epoch)
+							 rescal=1/sqrt(df),epoch=epoch,cumulants=cumulants)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr default
-#' @S3method as.sr default
-as.sr.default <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
-	mu <- mean(x,na.rm=na.rm)
-	sigma <- sd(x,na.rm=na.rm)
+#' @export
+as.sr.default <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
+	if (na.rm) { x <- na.omit(x) }
+	mu <- mean(x)
+	sigma <- sd(x)
+	if (higher_order) {
+		# find this in sr_bias.r
+		cumulants <- matrix(.smplgamma(x,muy=mu),ncol=1)  # make it a matrix.
+		rownames(cumulants) <- paste0('gamma_',1:4)
+	} else { 
+		cumulants <- NULL 
+	}
+
 	retval <- .as.sr.unified(x=x,mu=mu,sigma=sigma,c0=c0,ope=ope,
-													 na.rm=na.rm,epoch=epoch)
+													 na.rm=na.rm,epoch=epoch,cumulants=cumulants)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr matrix
-#' @S3method as.sr matrix
-as.sr.matrix <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
+#' @export
+as.sr.matrix <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
 	mu <- apply(x,2,mean,na.rm=na.rm)
 	sigma <- apply(x,2,sd,na.rm=na.rm)
+
+	# remember that the cumulants in general will be a matrix...
+	if (higher_order) {
+		# find this in sr_bias.r
+		cumulants <- apply(x,2,.smplgamma,na.rm=na.rm)
+		rownames(cumulants) <- paste0('gamma_',1:4)
+	} else { 
+		cumulants <- NULL 
+	}
+
 	retval <- .as.sr.unified(x=x,mu=mu,sigma=sigma,c0=c0,ope=ope,
-													 na.rm=na.rm,epoch=epoch)
+													 na.rm=na.rm,epoch=epoch,cumulants=cumulants)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr data.frame
-#' @S3method as.sr data.frame
-as.sr.data.frame <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
-	retval <- as.sr.matrix(x,c0=c0,ope=ope,na.rm=na.rm,epoch=epoch)
+#' @export
+as.sr.data.frame <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
+	retval <- as.sr.matrix(x,c0=c0,ope=ope,na.rm=na.rm,epoch=epoch,higher_order=higher_order)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr lm 
-#' @S3method as.sr lm
-as.sr.lm <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
+#' @export
+as.sr.lm <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
 	mu <- x$coefficients["(Intercept)"]
 	sigma <- sqrt(deviance(x) / x$df.residual)
+	if (higher_order) { warning('cannot compute higher order cumulants on lm object; ignoring the flag') }
 	z <- .compute_sr(mu,c0,sigma,ope)
 	dim(z) <- c(1,1)
 	rownames(z) <- deparse(substitute(x))
 	XXinv <- vcov(x) / sigma^2
 	rescal <- sqrt(XXinv["(Intercept)","(Intercept)"])
 	retval <- sr(z,df=x$df.residual,c0=c0,ope=ope,
-							 rescal=rescal,epoch=epoch)
+							 rescal=rescal,epoch=epoch,cumulants=NULL)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr xts 
-#' @S3method as.sr xts
-as.sr.xts <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
+#' @export
+as.sr.xts <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
 	if (missing(ope) && missing(epoch)) {
 		ope <- .infer_ope_xts(x)
 		epoch <- "yr"
 	}
-	retval <- as.sr.data.frame(as.data.frame(x),c0=c0,ope=ope,na.rm=na.rm,epoch=epoch)
+	retval <- as.sr.data.frame(as.data.frame(x),c0=c0,ope=ope,na.rm=na.rm,epoch=epoch,higher_order=higher_order)
 	return(retval)
 }
 #' @rdname as.sr
 #' @method as.sr timeSeries
-#' @S3method as.sr timeSeries
-as.sr.timeSeries <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
+#' @export
+as.sr.timeSeries <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr",higher_order=FALSE) {
 	# you want to do this, but requires xts package. oops.
 	#retval <- as.sr.xts(as.xts(x),c0=c0,ope=ope,na.rm=na.rm,epoch=epoch)
 	if (missing(ope) && missing(epoch)) {
 		ope <- .infer_ope_xts(x)
 		epoch <- "yr"
 	}
-	retval <- as.sr.data.frame(as.data.frame(x),c0=c0,ope=ope,na.rm=na.rm,epoch=epoch)
+	retval <- as.sr.data.frame(as.data.frame(x),c0=c0,ope=ope,na.rm=na.rm,epoch=epoch,higher_order=higher_order)
 	return(retval)
 }
 #' @title Is this in the "sr" class?
@@ -317,10 +336,6 @@ as.sr.timeSeries <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
 #' @details
 #'
 #' To satisfy the minimum requirements of an S3 class.
-#'
-#' @usage
-#'
-#' is.sr(x)
 #'
 #' @param x an object of some kind.
 #' @return a boolean.
@@ -334,7 +349,7 @@ as.sr.timeSeries <- function(x,c0=0,ope=1,na.rm=FALSE,epoch="yr") {
 #' is.sr(rvs)
 is.sr <- function(x) inherits(x,"sr")
 
-# ' @S3method format sr
+# ' @export
 # ' @export
 format.sr <- function(x,...) {
 	# oh! ugly! ugly!
@@ -354,7 +369,7 @@ format.sr <- function(x,...) {
 #' @return the object, wrapped in \code{invisible}.
 #' @rdname print
 #' @method print sr
-#' @S3method print sr
+#' @export
 #' @export
 #' @template etc
 #' @template sr
@@ -466,7 +481,6 @@ reannualize <- function(object,new.ope=NULL,new.epoch=NULL) {
 }
 #' @rdname reannualize
 #' @method reannualize sr
-#' @S3method reannualize sr
 #' @export
 reannualize.sr <- function(object,new.ope=NULL,new.epoch=NULL) {
 	if (!is.sr(object)) stop("must give sr object")
@@ -479,7 +493,6 @@ reannualize.sr <- function(object,new.ope=NULL,new.epoch=NULL) {
 }
 #' @rdname reannualize
 #' @method reannualize sropt
-#' @S3method reannualize sropt
 #' @export
 reannualize.sropt <- function(object,new.ope=NULL,new.epoch=NULL) {
 	if (!is.sropt(object)) stop("must give sropt object")
@@ -543,7 +556,7 @@ as.markowitz.default <- function(X,mu=NULL,Sigma=NULL,...) {
 #UNFOLD
 
 ########################################################################
-# Optimal Sharpe ratio#FOLDUP
+# Optimal Sharpe ratio#
 
 # spawn a "SROPT" object.
 #' @title Create an 'sropt' object.
@@ -569,10 +582,6 @@ as.markowitz.default <- function(X,mu=NULL,Sigma=NULL,...) {
 #' For the most part, this constructor should \emph{not} be called directly,
 #' rather \code{\link{as.sropt}} should be called instead to compute the
 #' needed statistics.
-#'
-#' @usage
-#'
-#' sropt(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL)
 #'
 #' @param z.s an optimum Sharpe ratio statistic.
 #' @inheritParams dsropt
@@ -666,10 +675,6 @@ sropt <- function(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL) {
 #' converter from \code{xts} attempts to infer the observations per epoch,
 #' assuming yearly epoch.
 #'
-#' @usage
-#'
-#' as.sropt(X,drag=0,ope=1,epoch="yr")
-#'
 #' @param X matrix of returns, or \code{xts} object.
 #' @inheritParams sropt 
 #' @keywords univar 
@@ -717,7 +722,9 @@ sropt <- function(z.s,df1,df2,drag=0,ope=1,epoch="yr",T2=NULL) {
 #'     # chomp first NA!
 #'     lrets[-1,]
 #'   }
-#'   get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
+#'   get.rets <- function(syms,...) { 
+#'		some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
+#'	 }
 #'   some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
 #'   asro <- as.sropt(some.rets)
 #' }
@@ -727,7 +734,7 @@ as.sropt <- function(X,drag=0,ope=1,epoch="yr") {
 }
 #' @rdname as.sropt
 #' @method as.sropt default
-#' @S3method as.sropt default
+#' @export
 as.sropt.default <- function(X,drag=0,ope=1,epoch="yr") {
 	# somehow call sropt!
 	hotval <- as.markowitz(X)
@@ -746,7 +753,7 @@ as.sropt.default <- function(X,drag=0,ope=1,epoch="yr") {
 }
 #' @rdname as.sropt
 #' @method as.sropt xts
-#' @S3method as.sropt xts
+#' @export
 as.sropt.xts <- function(X,drag=0,ope=1,epoch="yr") {
 	if (missing(ope)) {
 		ope <- .infer_ope_xts(X)
@@ -763,10 +770,6 @@ as.sropt.xts <- function(X,drag=0,ope=1,epoch="yr") {
 #' @details
 #'
 #' To satisfy the minimum requirements of an S3 class.
-#'
-#' @usage
-#'
-#' is.sropt(x)
 #'
 #' @param x an object of some kind.
 #' @return a boolean.
@@ -789,7 +792,6 @@ is.sropt <- function(x) inherits(x,"sropt")
 
 #' @rdname print
 #' @method print sropt
-#' @S3method print sropt
 #' @export
 print.sropt <- function(x,...) {
 	Tval <- x$T2
@@ -806,7 +808,7 @@ print.sropt <- function(x,...) {
 							 cs.ind=c(1,2,3,4),tst.ind=c(5),dig.tst=2)
 }
 
-# SROPT methods#FOLDUP
+# SROPT methods#
 # get the T2-stat associated with an SROPT object.
 .sropt2T <- function(x,Tval=x$T2) {
 	if (is.null(Tval)) {
@@ -829,8 +831,8 @@ print.sropt <- function(x,...) {
 		retv <- pT2(Tval,x$df1,x$df2,lower.tail=FALSE)
 	return(retv)
 }
-#UNFOLD
-#UNFOLD
+#
+#
 
 ########################################################################
 # Delta Squared Optimal Sharpe ratio#FOLDUP
@@ -866,10 +868,6 @@ print.sropt <- function(x,...) {
 #' For the most part, this constructor should \emph{not} be called directly,
 #' rather \code{\link{as.del_sropt}} should be called instead to compute the
 #' needed statistics.
-#'
-#' @usage
-#'
-#' del_sropt(z.s,z.sub,df1,df2,df1.sub,drag=0,ope=1,epoch="yr")
 #'
 #' @param z.s an optimum Sharpe ratio statistic, on some set of assets.
 #' @param z.sub an optimum Sharpe ratio statistic, on a linear subspace
@@ -987,10 +985,6 @@ del_sropt <- function(z.s,z.sub,df1,df2,df1.sub,drag=0,ope=1,epoch="yr") {
 #' converter from \code{xts} attempts to infer the observations per epoch,
 #' assuming yearly epoch.
 #'
-#' @usage
-#'
-#' as.del_sropt(X,G,drag=0,ope=1,epoch="yr")
-#'
 #' @param X matrix of returns, or \code{xts} object.
 #' @param G an \eqn{g \times q}{g x q} matrix of hedge constraints. A 
 #' garden variety application would have \code{G} be one row of the
@@ -1031,7 +1025,9 @@ del_sropt <- function(z.s,z.sub,df1,df2,df1.sub,drag=0,ope=1,epoch="yr") {
 #'     # chomp first NA!
 #'     lrets[-1,]
 #'   }
-#'   get.rets <- function(syms,...) { some.rets <- do.call("cbind",lapply(syms,get.ret,...)) }
+#'   get.rets <- function(syms,...) { 
+#'		some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
+#'	 }
 #'   some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
 #'   # hedge out SPY
 #'   G <- diag(dim(some.rets)[2])[5,]
@@ -1043,7 +1039,7 @@ as.del_sropt <- function(X,G,drag=0,ope=1,epoch="yr") {
 }
 #' @rdname as.del_sropt
 #' @method as.del_sropt default
-#' @S3method as.del_sropt default
+#' @export
 as.del_sropt.default <- function(X,G,drag=0,ope=1,epoch="yr") {
 	# somehow call sropt!
 	hotval <- as.markowitz(X)
@@ -1069,7 +1065,7 @@ as.del_sropt.default <- function(X,G,drag=0,ope=1,epoch="yr") {
 }
 #' @rdname as.del_sropt
 #' @method as.del_sropt xts
-#' @S3method as.del_sropt xts
+#' @export
 as.del_sropt.xts <- function(X,G,drag=0,ope=1,epoch="yr") {
 	if (missing(ope)) {
 		ope <- .infer_ope_xts(X)
@@ -1087,10 +1083,6 @@ as.del_sropt.xts <- function(X,G,drag=0,ope=1,epoch="yr") {
 #'
 #' To satisfy the minimum requirements of an S3 class.
 #'
-#' @usage
-#'
-#' is.del_sropt(x)
-#'
 #' @param x an object of some kind.
 #' @return a boolean.
 #' @seealso del_sropt
@@ -1105,7 +1097,6 @@ is.del_sropt <- function(x) inherits(x,"del_sropt")
 
 #' @rdname print
 #' @method print del_sropt
-#' @S3method print del_sropt
 #' @export
 print.del_sropt <- function(x,...) {
 	Fandp <- .del_sropt.asF(x)
@@ -1143,11 +1134,10 @@ print.del_sropt <- function(x,...) {
 #' Enhances an object of class \code{sr}, \code{sropt} or \code{del_sropt} to also 
 #' include t- or T-statistics, p-values, and so on.
 #' 
-#' @usage
-#'
-#' summary(obj)
-#'
-#' @param obj an object of class \code{sr}, \code{sropt} or \code{del_sropt}.
+#' @param object an object of class \code{sr}, \code{sropt} or \code{del_sropt}.
+#' @param ...  additional arguments affecting the summary produced, though
+#' ignored here.
+#' @inheritParams summary
 #' @return When an \code{sr} object is input, the object cast to class \code{summary.sr} with some
 #' additional fields:
 #' \describe{
@@ -1164,7 +1154,6 @@ print.del_sropt <- function(x,...) {
 #'
 #' @seealso \code{\link{print.sr}}.
 #' @rdname summary
-#' @export summary
 #' @template etc
 #' @template sr
 #'
@@ -1173,28 +1162,24 @@ print.del_sropt <- function(x,...) {
 #' set.seed(1234)
 #' asr <- as.sr(rnorm(253*3),ope=253)
 #' summary(asr)
-summary <- function(obj) {
-	UseMethod("summary", obj)
-}
-#' @rdname summary
 #' @method summary sr
-#' @S3method summary sr
-summary.sr <- function(obj) {
-	obj$tval <- .sr2t(obj)
-	obj$pval <- pt(obj$tval,obj$df,lower.tail=FALSE)
-	obj$serr <- se(obj,type="t")
-	class(obj) <- "summary.sr"
-	obj
+#' @export
+summary.sr <- function(object,...) {
+	object$tval <- .sr2t(object)
+	object$pval <- pt(object$tval,object$df,lower.tail=FALSE)
+	object$serr <- se(object,type="t")
+	class(object) <- "summary.sr"
+	object
 }
 #' @rdname summary
 #' @method summary sropt
-#' @S3method summary sropt
-summary.sropt <- function(obj) {
-	obj$pval <- .sropt.pval(obj)
-	obj$SRIC <- sric(obj)
+#' @export
+summary.sropt <- function(object,...) {
+	object$pval <- .sropt.pval(object)
+	object$SRIC <- sric(object)
 	#... anything else? KRS?
-	class(obj) <- "summary.sropt"
-	obj
+	class(object) <- "summary.sropt"
+	object
 }
 
 #UNFOLD

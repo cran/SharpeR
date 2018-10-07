@@ -1,4 +1,4 @@
-# Copyright 2012-2014 Steven E. Pav. All Rights Reserved.
+# Copyright 2012-2018 Steven E. Pav. All Rights Reserved.
 # Author: Steven E. Pav
 
 # This file is part of SharpeR.
@@ -71,7 +71,9 @@
 # as a difftime
 .infer_delt_xts <- function(anxts) {
 	TEO <- time(anxts)
-	delt <- difftime(TEO[length(TEO)],TEO[1],units='days')
+	# the as.Date rigamarole is b/c these are timeDate objects and now
+	# the conversion to POSIXct in difftime requires an origin? WTF?
+	delt <- difftime(as.Date(TEO[length(TEO)]),as.Date(TEO[1]),units='days')
 	return(delt)
 }
 # infer the observations per epoch from an xts object
@@ -117,10 +119,10 @@
 .d_T2_to_F <- function(T2, p, n) {
 	return((n - p) / (p * (n - 1)))
 }
-# don't need this?
-.logT2_to_logF <- function(logT2, p, n) {
-	return(logT2 + log(.T2_to_F(1, p, n)))  # correct but mildly inefficient
-}
+# don't need this, I think
+#.logT2_to_logF <- function(logT2, p, n) {
+	#return(logT2 + log(.T2_to_F(1, p, n)))  # correct but mildly inefficient
+#}
 # convert F statistic to hotelling T2
 .F_to_T2 <- function(F, p, n) {
 	return(F * (p * (n - 1)) / (n - p))
@@ -139,9 +141,10 @@
 .d_T2_to_sropt <- function(T2, n) {
 	return(0.5 / sqrt(T2 * n))
 }
-.logT2_to_logsropt <- function(logT2, n) {
-	return(0.5 * (logT2 - log(n)))
-}
+# don't need this, I think
+#.logT2_to_logsropt <- function(logT2, n) {
+	#return(0.5 * (logT2 - log(n)))
+#}
 # convert sropt to T2; 
 # 2FIX: this is a total cluster fuck b/c negative sropt
 # are 'out of range'; silently mark them up to zero here

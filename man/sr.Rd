@@ -4,7 +4,8 @@
 \alias{sr}
 \title{Create an 'sr' object.}
 \usage{
-sr(sr,df,c0=0,ope=1,rescal=sqrt(1/(df+1)),epoch="yr")
+sr(sr, df, c0 = 0, ope = 1, rescal = sqrt(1/(df + 1)), epoch = "yr",
+  cumulants = NULL)
 }
 \arguments{
 \item{sr}{a Sharpe ratio statistic.}
@@ -27,6 +28,13 @@ will be made.}
 
 \item{epoch}{the string representation of the 'epoch', defaulting
 to 'yr'.}
+
+\item{cumulants}{an optional array of the higher order cumulants
+of the returns distribution. The first element shall
+be the skew; the second the excess kurtosis. Up to the
+sixth cumulant can be given.  Higher order
+approximations for the moments of the Sharpe ratio can be
+computed based on these cumulants.}
 }
 \value{
 a list cast to class \code{sr}.
@@ -68,9 +76,6 @@ rvs <- rsr(5,n,zeta,ope=ope)
 roll.own <- sr(sr=rvs,df=n-1,ope=ope,rescal=sqrt(1/n))
 
 }
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
-}
 \references{
 Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-138.
 \url{http://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
@@ -87,7 +92,9 @@ Other sr: \code{\link{as.sr}}, \code{\link{confint.sr}},
   \code{\link{reannualize}}, \code{\link{se}},
   \code{\link{sr_equality_test}}, \code{\link{sr_test}},
   \code{\link{sr_unpaired_test}}, \code{\link{sr_vcov}},
-  \code{\link{summary}}
+  \code{\link{summary.sr}}
+}
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
 }
 \keyword{univar}
-

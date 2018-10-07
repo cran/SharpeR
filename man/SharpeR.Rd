@@ -134,9 +134,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 }
-\author{
-Steven E. Pav \email{shabbychef@gmail.com}
-}
+
 \references{
 Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-138.
 \url{http://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
@@ -163,7 +161,7 @@ Rao, C. R. "Advanced Statistical Methods in Biometric Research." Wiley
 
 Rao, C. R. "On Some Problems Arising out of Discrimination with Multiple 
 Characters." Sankhya, 9, no. 4 (1949): 343-366.
-\url{http://www.jstor.org/stable/25047988}
+\url{https://www.jstor.org/stable/25047988}
 
 Kan, Raymond and Smith, Daniel R. "The Distribution of the Sample Minimum-Variance Frontier."
 Journal of Management Science 54, no. 7 (2008): 1364--1380.
@@ -175,7 +173,7 @@ Annals of Economics and Finance 13, no. 1 (2012)
 
 Britten-Jones, Mark. "The Sampling Error in Estimates of Mean-Variance 
 Efficient Portfolio Weights." The Journal of Finance 54, no. 2 (1999):
-655--671. \url{http://www.jstor.org/stable/2697722}
+655--671. \url{https://www.jstor.org/stable/2697722}
 
 Silvapulle, Mervyn. J. "A Hotelling's T2-type statistic for testing against 
 one-sided hypotheses." Journal of Multivariate Analysis 55, no. 2 (1995):
@@ -186,5 +184,7 @@ and Normal Distributions with Applications to Discriminant Analysis
 and Portfolio Theory." Scandinavian Journal of Statistics 38, no. 2 (2011):
 311--331. \url{http://dx.doi.org/10.1111/j.1467-9469.2011.00729.x}
 }
+\author{
+Steven E. Pav \email{shabbychef@gmail.com}
+}
 \keyword{package}
-
