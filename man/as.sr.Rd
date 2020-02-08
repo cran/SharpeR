@@ -10,26 +10,19 @@
 \alias{as.sr.timeSeries}
 \title{Compute the Sharpe ratio.}
 \usage{
-as.sr(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
-  higher_order = FALSE)
+as.sr(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{default}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
-  higher_order = FALSE)
+\method{as.sr}{default}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{matrix}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
-  higher_order = FALSE)
+\method{as.sr}{matrix}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{data.frame}(x, c0 = 0, ope = 1, na.rm = FALSE,
-  epoch = "yr", higher_order = FALSE)
+\method{as.sr}{data.frame}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{lm}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
-  higher_order = FALSE)
+\method{as.sr}{lm}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{xts}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr",
-  higher_order = FALSE)
+\method{as.sr}{xts}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 
-\method{as.sr}{timeSeries}(x, c0 = 0, ope = 1, na.rm = FALSE,
-  epoch = "yr", higher_order = FALSE)
+\method{as.sr}{timeSeries}(x, c0 = 0, ope = 1, na.rm = FALSE, epoch = "yr", higher_order = FALSE)
 }
 \arguments{
 \item{x}{vector of returns, or object of class \code{data.frame}, \code{xts},
@@ -97,14 +90,14 @@ asr <- as.sr(rnorm(253*3),ope=253)
 my.returns <- matrix(rnorm(253*3),ncol=1)
 colnames(my.returns) <- c("my strategy")
 asr <- as.sr(my.returns)
+
 # given an xts object:
-\dontrun{
-if (require(quantmod)) {
-  IBM <- getSymbols('IBM',auto.assign=FALSE)
-  lrets <- diff(log(IBM[,"IBM.Adjusted"]))
-  asr <- as.sr(lrets,na.rm=TRUE)
+if (require(xts)) {
+ data(stock_returns)
+ IBM <- stock_returns[,'IBM']
+ asr <- as.sr(IBM,na.rm=TRUE)
 }
-}
+
 # on a linear model, find the 'Sharpe' of the residual term
 nfac <- 5
 nyr <- 10
@@ -139,16 +132,25 @@ Lo, Andrew W. "The statistics of Sharpe ratios." Financial Analysts Journal 58, 
 
 sr-distribution functions, \code{\link{dsr}, \link{psr}, \link{qsr}, \link{rsr}}
 
-Other sr: \code{\link{confint.sr}}, \code{\link{dsr}},
-  \code{\link{is.sr}}, \code{\link{plambdap}},
-  \code{\link{power.sr_test}}, \code{\link{predint}},
-  \code{\link{print.sr}}, \code{\link{reannualize}},
-  \code{\link{se}}, \code{\link{sr_equality_test}},
-  \code{\link{sr_test}}, \code{\link{sr_unpaired_test}},
-  \code{\link{sr_vcov}}, \code{\link{sr}},
-  \code{\link{summary.sr}}
+Other sr: 
+\code{\link{confint.sr}()},
+\code{\link{dsr}()},
+\code{\link{is.sr}()},
+\code{\link{plambdap}()},
+\code{\link{power.sr_test}()},
+\code{\link{predint}()},
+\code{\link{print.sr}()},
+\code{\link{reannualize}()},
+\code{\link{se}()},
+\code{\link{sr_equality_test}()},
+\code{\link{sr_test}()},
+\code{\link{sr_unpaired_test}()},
+\code{\link{sr_vcov}()},
+\code{\link{sr}},
+\code{\link{summary.sr}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sr}
 \keyword{univar}

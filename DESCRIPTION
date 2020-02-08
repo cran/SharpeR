@@ -4,8 +4,8 @@ Authors@R: c(person(c("Steven", "E."), "Pav",
     role=c("aut","cre"),
     email="shabbychef@gmail.com",
     comment = c(ORCID = "0000-0002-4197-6195")))
-Version: 1.2.0
-Date: 2018-10-07
+Version: 1.2.1
+Date: 2020-02-06
 License: LGPL-3
 Title: Statistical Significance of the Sharpe Ratio
 BugReports: https://github.com/shabbychef/SharpeR/issues
@@ -15,18 +15,19 @@ Description: A collection of tools for analyzing significance of assets,
     of the Sharpe ratio distribution based on normal returns, as well
     as the optimal Sharpe ratio over multiple assets. Computes confidence intervals
     on the Sharpe and provides a test of equality of Sharpe ratios based on 
-    the Delta method.
+    the Delta method. The statistical foundations of the Sharpe can be found in
+    the author's Short Sharpe Course  <doi:10.2139/ssrn.3036276>.
 Depends: R (>= 3.0.0)
 Imports: matrixcalc, methods, sadists (>= 0.2.0)
 Suggests: xtable, xts, timeSeries, quantmod, MASS, TTR, testthat,
-        sandwich, knitr
+        sandwich, txtplot, knitr
 URL: https://github.com/shabbychef/SharpeR
 VignetteBuilder: knitr
-Collate: 'SharpeR.r' 'utils.r' 'distributions.r' 'sr.r' 'estimation.r'
-        'sr_bias.r' 'tests.r' 'unified.r'
-RoxygenNote: 6.0.1
+Collate: 'SharpeR.r' 'data.r' 'utils.r' 'distributions.r' 'sr.r'
+        'estimation.r' 'sr_bias.r' 'tests.r' 'unified.r'
+RoxygenNote: 7.0.2
 NeedsCompilation: no
-Packaged: 2018-10-07 19:16:00 UTC; spav
+Packaged: 2020-02-08 06:27:55 UTC; spav
 Author: Steven E. Pav [aut, cre] (<https://orcid.org/0000-0002-4197-6195>)
 Repository: CRAN
-Date/Publication: 2018-10-07 21:00:13 UTC
+Date/Publication: 2020-02-08 07:00:11 UTC

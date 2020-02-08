@@ -66,12 +66,10 @@ x1 <- matrix(rnorm(n1*p,mean=mu,sd=sg),ncol=p)
 x2 <- matrix(rnorm(n2*p,mean=mu,sd=sg),ncol=p)
 sr1 <- as.sr(x1)
 sr2 <- as.sr(x2)
-\dontrun{
-# takes too long to run ... 
+# check coverage of prediction interval
 etc1 <- predint(sr1,oosdf=n2-1,level=0.95)
 is.ok <- (etc1[,1] <= sr2$sr) & (sr2$sr <= etc1[,2])
 covr <- mean(is.ok)
-}
 
 }
 \references{
@@ -85,15 +83,24 @@ Arxiv (2015).
 \seealso{
 \code{\link{confint.sr}}.
 
-Other sr: \code{\link{as.sr}}, \code{\link{confint.sr}},
-  \code{\link{dsr}}, \code{\link{is.sr}},
-  \code{\link{plambdap}}, \code{\link{power.sr_test}},
-  \code{\link{print.sr}}, \code{\link{reannualize}},
-  \code{\link{se}}, \code{\link{sr_equality_test}},
-  \code{\link{sr_test}}, \code{\link{sr_unpaired_test}},
-  \code{\link{sr_vcov}}, \code{\link{sr}},
-  \code{\link{summary.sr}}
+Other sr: 
+\code{\link{as.sr}()},
+\code{\link{confint.sr}()},
+\code{\link{dsr}()},
+\code{\link{is.sr}()},
+\code{\link{plambdap}()},
+\code{\link{power.sr_test}()},
+\code{\link{print.sr}()},
+\code{\link{reannualize}()},
+\code{\link{se}()},
+\code{\link{sr_equality_test}()},
+\code{\link{sr_test}()},
+\code{\link{sr_unpaired_test}()},
+\code{\link{sr_vcov}()},
+\code{\link{sr}},
+\code{\link{summary.sr}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sr}

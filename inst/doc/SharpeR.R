@@ -180,7 +180,7 @@ XLU.monthly <- mo.rets[,"XLU"]
 print(sr_test(XLU.monthly),alternative="two.sided")
 
 # test for equality of Sharpe among the different spiders
-print(sr_equality_test(secto.rets))
+print(sr_equality_test(as.matrix(secto.rets)))
 # perform a paired two-sample test via sr_test:
 XLF.monthly <- mo.rets[,"XLF"]
 print(sr_test(x=XLU.monthly,y=XLF.monthly,ope=12,paired=TRUE))
@@ -400,8 +400,8 @@ qqunif(sr_eq.pvals)
 
 ## ----'sr_fancy_eq'--------------------------------------------
 # get returns
-some.rets <- get.rets(c("IBM","AAPL","XOM"),
-	from="2007-01-01",to="2013-01-01")
+some.rets <- as.matrix(get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01"))
 # using the default vcov
 test.vanilla <- sr_equality_test(some.rets,type="F")
 print(test.vanilla)
@@ -413,8 +413,8 @@ if (require(sandwich)) {
 
 ## ----'sr_vcov'------------------------------------------------
 # get returns
-some.rets <- get.rets(c("IBM","AAPL","XOM"),
-	from="2007-01-01",to="2013-01-01")
+some.rets <- as.matrix(get.rets(c("IBM","AAPL","XOM"),
+	from="2007-01-01",to="2013-01-01"))
 ope <- 252
 vanilla.Sig <- sr_vcov(some.rets,ope=ope)
 print(vanilla.Sig)

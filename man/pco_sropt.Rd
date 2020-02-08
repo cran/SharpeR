@@ -77,12 +77,12 @@ df2 <- 6 * ope
 rvs <- rsropt(ntest,df1=df1,df2=df2,zeta.s=zeta.s)
 qvs <- seq(0,10,length.out=51)
 pps <- pco_sropt(qvs,df1,df2,rvs[1],ope)
-\dontrun{
+\donttest{
 if (require(txtplot))
  txtplot(qvs,pps)
 }
 pps <- pco_sropt(qvs,df1,df2,rvs[1],ope,lower.tail=FALSE)
-\dontrun{
+\donttest{
 if (require(txtplot))
  txtplot(qvs,pps)
 }
@@ -112,13 +112,18 @@ qv <- qco_sropt(c(0.1,0.2),c(df1,2*df1),c(df2,2*df2),rvs)
 
 \code{\link{dsropt},\link{psropt},\link{qsropt},\link{rsropt}}
 
-Other sropt: \code{\link{as.sropt}},
-  \code{\link{confint.sr}}, \code{\link{dsropt}},
-  \code{\link{is.sropt}}, \code{\link{power.sropt_test}},
-  \code{\link{reannualize}}, \code{\link{sropt_test}},
-  \code{\link{sropt}}
+Other sropt: 
+\code{\link{as.sropt}()},
+\code{\link{confint.sr}()},
+\code{\link{dsropt}()},
+\code{\link{is.sropt}()},
+\code{\link{power.sropt_test}()},
+\code{\link{reannualize}()},
+\code{\link{sropt_test}()},
+\code{\link{sropt}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sropt}
 \keyword{distribution}

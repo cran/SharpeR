@@ -53,7 +53,7 @@ Sigmas <- sr_vcov(X)
 # make it fat tailed:
 X <- matrix(rt(1000*3,df=5),ncol=3)
 Sigmas <- sr_vcov(X)
-\dontrun{
+\donttest{
 if (require(sandwich)) {
 Sigmas <- sr_vcov(X,vcov.func=vcovHC)
 }
@@ -62,7 +62,7 @@ Sigmas <- sr_vcov(X,vcov.func=vcovHC)
 Xf <- filter(X,c(0.2),"recursive")
 colnames(Xf) <- colnames(X)
 Sigmas <- sr_vcov(Xf)
-\dontrun{
+\donttest{
 if (require(sandwich)) {
 Sigmas <- sr_vcov(Xf,vcov.func=vcovHAC)
 }
@@ -84,16 +84,25 @@ Lo, Andrew W. "The statistics of Sharpe ratios." Financial Analysts Journal 58, 
 
 sr-distribution functions, \code{\link{dsr}}
 
-Other sr: \code{\link{as.sr}}, \code{\link{confint.sr}},
-  \code{\link{dsr}}, \code{\link{is.sr}},
-  \code{\link{plambdap}}, \code{\link{power.sr_test}},
-  \code{\link{predint}}, \code{\link{print.sr}},
-  \code{\link{reannualize}}, \code{\link{se}},
-  \code{\link{sr_equality_test}}, \code{\link{sr_test}},
-  \code{\link{sr_unpaired_test}}, \code{\link{sr}},
-  \code{\link{summary.sr}}
+Other sr: 
+\code{\link{as.sr}()},
+\code{\link{confint.sr}()},
+\code{\link{dsr}()},
+\code{\link{is.sr}()},
+\code{\link{plambdap}()},
+\code{\link{power.sr_test}()},
+\code{\link{predint}()},
+\code{\link{print.sr}()},
+\code{\link{reannualize}()},
+\code{\link{se}()},
+\code{\link{sr_equality_test}()},
+\code{\link{sr_test}()},
+\code{\link{sr_unpaired_test}()},
+\code{\link{sr}},
+\code{\link{summary.sr}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sr}
 \keyword{univar}

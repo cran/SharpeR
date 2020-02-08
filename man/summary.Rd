@@ -12,8 +12,7 @@
 \arguments{
 \item{object}{an object of class \code{sr}, \code{sropt} or \code{del_sropt}.}
 
-\item{...}{additional arguments affecting the summary produced, though
-ignored here.}
+\item{...}{additional arguments affecting the summary produced, though ignored here.}
 }
 \value{
 When an \code{sr} object is input, the object cast to class \code{summary.sr} with some
@@ -50,15 +49,24 @@ Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-13
 \seealso{
 \code{\link{print.sr}}.
 
-Other sr: \code{\link{as.sr}}, \code{\link{confint.sr}},
-  \code{\link{dsr}}, \code{\link{is.sr}},
-  \code{\link{plambdap}}, \code{\link{power.sr_test}},
-  \code{\link{predint}}, \code{\link{print.sr}},
-  \code{\link{reannualize}}, \code{\link{se}},
-  \code{\link{sr_equality_test}}, \code{\link{sr_test}},
-  \code{\link{sr_unpaired_test}}, \code{\link{sr_vcov}},
-  \code{\link{sr}}
+Other sr: 
+\code{\link{as.sr}()},
+\code{\link{confint.sr}()},
+\code{\link{dsr}()},
+\code{\link{is.sr}()},
+\code{\link{plambdap}()},
+\code{\link{power.sr_test}()},
+\code{\link{predint}()},
+\code{\link{print.sr}()},
+\code{\link{reannualize}()},
+\code{\link{se}()},
+\code{\link{sr_equality_test}()},
+\code{\link{sr_test}()},
+\code{\link{sr_unpaired_test}()},
+\code{\link{sr_vcov}()},
+\code{\link{sr}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sr}

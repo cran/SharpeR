@@ -94,34 +94,29 @@ if (require(MASS)) {
   Returns <- mvrnorm(ceiling(ope*nyr),mu=matrix(0.001,ncol=nstok),Sigma=Sigma)
   asro <- as.sropt(Returns,ope=ope)
 }
-\dontrun{
+
 # using real data.
-if (require(quantmod)) {
-  get.ret <- function(sym,...) {
-    OHLCV <- getSymbols(sym,auto.assign=FALSE,...)
-    lrets <- diff(log(OHLCV[,paste(c(sym,"Adjusted"),collapse=".",sep="")]))
-    # chomp first NA!
-    lrets[-1,]
-  }
-  get.rets <- function(syms,...) { 
-	some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
- }
-  some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
-  asro <- as.sropt(some.rets)
-}
-}
+if (require(xts)) {
+ data(stock_returns)
+ asro <- as.sropt(stock_returns)
+}  
 }
 \seealso{
 \code{\link{sropt}}, \code{\link{sr}}, sropt-distribution functions, 
 \code{\link{dsropt}, \link{psropt}, \link{qsropt}, \link{rsropt}}
 
-Other sropt: \code{\link{confint.sr}},
-  \code{\link{dsropt}}, \code{\link{is.sropt}},
-  \code{\link{pco_sropt}}, \code{\link{power.sropt_test}},
-  \code{\link{reannualize}}, \code{\link{sropt_test}},
-  \code{\link{sropt}}
+Other sropt: 
+\code{\link{confint.sr}()},
+\code{\link{dsropt}()},
+\code{\link{is.sropt}()},
+\code{\link{pco_sropt}()},
+\code{\link{power.sropt_test}()},
+\code{\link{reannualize}()},
+\code{\link{sropt_test}()},
+\code{\link{sropt}}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sropt}
 \keyword{univar}

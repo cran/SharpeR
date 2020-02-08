@@ -104,9 +104,11 @@ Journal of multivariate analysis 18, no. 2 (1986): 216-224.
 \seealso{
 F-distribution functions, \code{\link{df}}.
 
-Other sropt Hotelling: \code{\link{sric}}
+Other sropt Hotelling: 
+\code{\link{sric}()}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{sropt Hotelling}
 \keyword{htest}

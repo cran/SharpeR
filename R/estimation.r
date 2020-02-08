@@ -89,7 +89,7 @@
 #' # make it fat tailed:
 #' X <- matrix(rt(1000*3,df=5),ncol=3)
 #' Sigmas <- sr_vcov(X)
-#' \dontrun{
+#' \donttest{
 #' if (require(sandwich)) {
 #'	Sigmas <- sr_vcov(X,vcov.func=vcovHC)
 #' }
@@ -98,7 +98,7 @@
 #' Xf <- filter(X,c(0.2),"recursive")
 #' colnames(Xf) <- colnames(X)
 #' Sigmas <- sr_vcov(Xf)
-#' \dontrun{
+#' \donttest{
 #' if (require(sandwich)) {
 #'	Sigmas <- sr_vcov(Xf,vcov.func=vcovHAC)
 #' }
@@ -296,7 +296,6 @@ se <- function(z, type) {
 #'
 #' @param z an observed Sharpe ratio statistic, of class \code{sr}.
 #' @param type estimator type. one of \code{"t", "Lo", "Mertens", "Bao"}
-#' @template param-ellipsis
 #' @keywords htest
 #' @return an estimate of standard error.
 #' @seealso sr-distribution functions, \code{\link{dsr}},
@@ -560,12 +559,10 @@ confint.del_sropt <- function(object,parm,level=0.95,
 #' x2 <- matrix(rnorm(n2*p,mean=mu,sd=sg),ncol=p)
 #' sr1 <- as.sr(x1)
 #' sr2 <- as.sr(x2)
-#' \dontrun{
-#' # takes too long to run ... 
+#' # check coverage of prediction interval
 #' etc1 <- predint(sr1,oosdf=n2-1,level=0.95)
 #' is.ok <- (etc1[,1] <= sr2$sr) & (sr2$sr <= etc1[,2])
 #' covr <- mean(is.ok)
-#' }
 #'
 #' @export
 predint <- function(x,oosdf,oosrescal=1/sqrt(oosdf+1),ope=NULL,level=0.95,
@@ -703,7 +700,6 @@ T2.inference <- function(T2,df1,df2,...) {
 #'
 #'
 #' @param z.s an object of type \code{sropt}, or \code{del_sropt}
-#' @inheritParams dsropt
 #' @param type the estimator type. one of \code{c("KRS", "MLE", "unbiased")}
 #' @keywords htest
 #' @return an estimate of the non-centrality parameter, which is

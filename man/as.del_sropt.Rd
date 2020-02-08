@@ -80,33 +80,25 @@ asro <- as.del_sropt(Returns,G,drag=0,ope=ope)
 # compare to sropt on the remaining assets
 # they should be close, but not exact.
 asro.alt <- as.sropt(Returns[,4:nfac],drag=0,ope=ope)
-\dontrun{
+
 # using real data.
-if (require(quantmod)) {
-  get.ret <- function(sym,...) {
-    OHLCV <- getSymbols(sym,auto.assign=FALSE,...)
-    lrets <- diff(log(OHLCV[,paste(c(sym,"Adjusted"),collapse=".",sep="")]))
-    # chomp first NA!
-    lrets[-1,]
-  }
-  get.rets <- function(syms,...) { 
-	some.rets <- do.call("cbind",lapply(syms,get.ret,...)) 
- }
-  some.rets <- get.rets(c("IBM","AAPL","A","C","SPY","XOM"))
+if (require(xts)) {
+  data(stock_returns)
   # hedge out SPY
-  G <- diag(dim(some.rets)[2])[5,]
-  asro <- as.del_sropt(some.rets,G)
-}
+  G <- diag(dim(stock_returns)[2])[3,]
+  asro <- as.del_sropt(stock_returns,G=G)
 }
 }
 \seealso{
 \code{\link{del_sropt}}, \code{\link{sropt}}, 
 \code{\link{sr}}
 
-Other del_sropt: \code{\link{del_sropt}},
-  \code{\link{is.del_sropt}}
+Other del_sropt: 
+\code{\link{del_sropt}},
+\code{\link{is.del_sropt}()}
 }
 \author{
 Steven E. Pav \email{shabbychef@gmail.com}
 }
+\concept{del_sropt}
 \keyword{univar}

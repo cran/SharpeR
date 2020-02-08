@@ -207,7 +207,7 @@ rrt <- function(n, df, K, rho = 0) {
 #' dvs <- dsr(rvs, 253*6, 0, 253)
 #' pvs.H0 <- psr(rvs, 253*6, 0, 253)
 #' pvs.HA <- psr(rvs, 253*6, 1, 253)
-#' \dontrun{
+#' \donttest{
 #' plot(ecdf(pvs.H0))
 #' plot(ecdf(pvs.HA))
 #' }
@@ -636,7 +636,6 @@ rsropt <- function(n, df1, df2, zeta.s, ope, drag = 0, ...) {
 #' @param log.p logical; if TRUE, probabilities p are given as \eqn{\mbox{log}(p)}{log(p)}.
 #' @param lower.tail logical; if TRUE (default), probabilities are
 #'        \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.
-#' @inheritParams dsr
 #' @keywords distribution 
 #' @return \code{dlambdap} gives the density, \code{plambdap} gives the distribution function,
 #' \code{qlambdap} gives the quantile function, and \code{rlambdap} generates random deviates.
@@ -806,12 +805,12 @@ rlambdap <- function(n, df, tstat) {
 #' rvs <- rsropt(ntest,df1=df1,df2=df2,zeta.s=zeta.s)
 #' qvs <- seq(0,10,length.out=51)
 #' pps <- pco_sropt(qvs,df1,df2,rvs[1],ope)
-#' \dontrun{
+#' \donttest{
 #' if (require(txtplot))
 #'  txtplot(qvs,pps)
 #' }
 #' pps <- pco_sropt(qvs,df1,df2,rvs[1],ope,lower.tail=FALSE)
-#' \dontrun{
+#' \donttest{
 #' if (require(txtplot))
 #'  txtplot(qvs,pps)
 #' }
