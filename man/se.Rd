@@ -35,6 +35,9 @@ moments.}
 
 There should be very little difference between these except for very small
 sample sizes.
+
+See \sQuote{The Sharpe Ratio: Statistics and Applications},
+sections 2.5.1 and 3.2.3.
 }
 \note{
 The units of the standard error are consistent with those of the
@@ -48,20 +51,22 @@ anse <- se(asr,type="Lo")
 }
 \references{
 Sharpe, William F. "Mutual fund performance." Journal of business (1966): 119-138.
-\url{http://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
+\url{https://ideas.repec.org/a/ucp/jnlbus/v39y1965p119.html}
 
 Johnson, N. L., and Welch, B. L. "Applications of the non-central t-distribution."
-Biometrika 31, no. 3-4 (1940): 362-389. \url{http://dx.doi.org/10.1093/biomet/31.3-4.362}
+Biometrika 31, no. 3-4 (1940): 362-389. \doi{10.1093/biomet/31.3-4.362}
 
 Lo, Andrew W. "The statistics of Sharpe ratios." Financial Analysts Journal 58, no. 4 
-(2002): 36-52. \url{http://ssrn.com/paper=377260}
+(2002): 36-52. \url{https://www.ssrn.com/paper=377260}
 
 Bao, Yong. "Estimation Risk-Adjusted Sharpe Ratio and Fund Performance Ranking 
 Under a General Return Distribution." Journal of Financial Econometrics 7, 
-no. 2 (2009): 152-173. \url{https://doi.org/10.1093/jjfinec/nbn022}
+no. 2 (2009): 152-173. \doi{10.1093/jjfinec/nbn022}
 
 Opdyke, J. D. "Comparing Sharpe Ratios: So Where are the p-values?" Journal of Asset
-Management 8, no. 5 (2006): 308-336. \url{http://ssrn.com/paper=886728}
+Management 8, no. 5 (2006): 308-336. \url{https://www.ssrn.com/paper=886728}
+
+Pav, S. E. "The Sharpe Ratio: Statistics and Applications." CRC Press, 2021.
 
 Walck, C. "Hand-book on STATISTICAL DISTRIBUTIONS for experimentalists."
 1996. \url{http://www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf}
